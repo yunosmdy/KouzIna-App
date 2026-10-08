@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Kouzina",
+            "request": "launch",
+            "mainClass": "KouzinaApp",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Dkouzina.data=\"${workspaceFolder}/data/kouzina.dat\""
+        },
+        {
+            "type": "java",
+            "name": "Run checks (tests)",
+            "request": "launch",
+            "mainClass": "ui.WorkflowChecks",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Djava.awt.headless=true"
+        }
+    ]
+}

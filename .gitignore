@@ -1,0 +1,14 @@
+# Compiled files (VS Code and Run.bat rebuild these)
+bin/
+out/
+*.class
+
+# Save data from running the app
+data/*.dat
+data/*.tmp
+
+# Editor / OS clutter
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

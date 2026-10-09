@@ -1,4 +1,4 @@
-# KÃ³uz 'InÃ  â€” Restaurant Management System
+Kouz Ina Restaurant Management System
 
 Java 21 desktop restaurant application with individual employee accounts and manager-approved roles.
 

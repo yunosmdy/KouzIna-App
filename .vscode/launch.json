@@ -15,7 +15,7 @@
             "request": "launch",
             "mainClass": "ui.WorkflowChecks",
             "cwd": "${workspaceFolder}",
-            "vmArgs": "-Djava.awt.headless=true"
+            "vmArgs": "-Djava.awt.headless=true -Dkouzina.testFixtures=\"${workspaceFolder}/test/fixtures\""
         }
     ]
 }

@@ -17,9 +17,9 @@ public final class CustomerService {
     }
 
     public String createCustomer(
-            String actorId, String firstName, String lastName, String phoneNumber) {
+            String sessionToken, String firstName, String lastName, String phoneNumber) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_CUSTOMERS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_CUSTOMERS);
             Customer customer = new Customer(idGenerator.nextId(), firstName, lastName, phoneNumber);
             state.addCustomer(customer);
             return customer.getId();
@@ -27,10 +27,10 @@ public final class CustomerService {
     }
 
     public void updateCustomer(
-            String actorId, String customerId, String firstName, String lastName,
+            String sessionToken, String customerId, String firstName, String lastName,
             String phoneNumber) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_CUSTOMERS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_CUSTOMERS);
             state.getCustomerOrThrow(customerId).updateContact(firstName, lastName, phoneNumber);
             return null;
         });

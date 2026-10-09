@@ -45,7 +45,7 @@ abstract class BrandSplitPanel extends JPanel {
         JPanel stack = new JPanel();
         stack.setOpaque(false);
         stack.setLayout(new BoxLayout(stack, BoxLayout.Y_AXIS));
-        LogoSpot logo = new LogoSpot(150, Theme.TEXT);
+        LogoSpot logo = new LogoSpot(170, Theme.TEXT, Theme.WHITE);
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
         stack.add(logo);
         stack.add(Box.createVerticalStrut(18));

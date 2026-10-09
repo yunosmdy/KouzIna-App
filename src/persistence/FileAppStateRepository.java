@@ -1,11 +1,9 @@
 package persistence;
 
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
-import java.io.ObjectStreamField;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,9 +58,11 @@ public final class FileAppStateRepository implements AppStateRepository {
     private AppState loadState() {
         try (ObjectInputStream input = new ObjectInputStream(Files.newInputStream(dataFile)) {
             @Override
-            protected ObjectStreamClass readClassDescriptor()
-                    throws IOException, ClassNotFoundException {
-                return matchCurrentPackage(super.readClassDescriptor());
+            protected Class<?> resolveClass(ObjectStreamClass descriptor) throws IOException, ClassNotFoundException {
+                String name = descriptor.getName();
+                if (name.startsWith("com.kouzina.") || name.startsWith("[Lcom.kouzina."))
+                    return Class.forName(name.replace("com.kouzina.", ""));
+                return super.resolveClass(descriptor);
             }
         }) {
             Object value = input.readObject();
@@ -78,40 +78,6 @@ public final class FileAppStateRepository implements AppStateRepository {
             throw new IllegalStateException(
                     "Unable to load Kóuz 'inà data from " + dataFile + ".", error);
         }
-    }
-
-    // para mabasa pa rin yung old save kahit may com.kouzina pa yung package name
-    private static ObjectStreamClass matchCurrentPackage(ObjectStreamClass saved)
-            throws ClassNotFoundException, InvalidClassException {
-        String currentName = saved.getName().replace("com.kouzina.", "");
-        if (currentName.equals(saved.getName())) {
-            return saved;
-        }
-        Class<?> currentType = Class.forName(
-                currentName, false, FileAppStateRepository.class.getClassLoader());
-        ObjectStreamClass current = ObjectStreamClass.lookup(currentType);
-        if (current == null || (!currentType.isArray()
-                && saved.getSerialVersionUID() != current.getSerialVersionUID())) {
-            throw new InvalidClassException(saved.getName(), "Saved class version does not match.");
-        }
-        ObjectStreamField[] savedFields = saved.getFields();
-        ObjectStreamField[] currentFields = current.getFields();
-        if (savedFields.length != currentFields.length) {
-            throw new InvalidClassException(saved.getName(), "Saved fields do not match.");
-        }
-        // package name lang nagbago dapat, di pwede tanggapin pag iba na yung fields
-        for (int index = 0; index < savedFields.length; index++) {
-            String savedType = savedFields[index].getTypeString();
-            if (savedType != null) {
-                savedType = savedType.replace("com/kouzina/", "");
-            }
-            if (!savedFields[index].getName().equals(currentFields[index].getName())
-                    || savedFields[index].getTypeCode() != currentFields[index].getTypeCode()
-                    || !Objects.equals(savedType, currentFields[index].getTypeString())) {
-                throw new InvalidClassException(saved.getName(), "Saved fields do not match.");
-            }
-        }
-        return current;
     }
 
     private void saveState(AppState state) {

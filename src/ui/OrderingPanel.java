@@ -629,7 +629,7 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
     }
 
     private String actor() {
-        return currentUser.get().employeeId();
+        return currentUser.get().sessionToken();
     }
 
     private String orderId() {

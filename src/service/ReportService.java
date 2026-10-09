@@ -23,9 +23,9 @@ public final class ReportService {
     }
 
     /** Payments na natanggap sa selected local date lang kasama dito. */
-    public DailySalesReport dailySales(String actorId, LocalDate date) {
+    public DailySalesReport dailySales(String sessionToken, LocalDate date) {
         LocalDate requiredDate = Objects.requireNonNull(date, "Report date is required.");
-        AppState state = authorizedSnapshot(actorId);
+        AppState state = authorizedSnapshot(sessionToken);
 
         int paymentCount = 0;
         BigDecimal total = Money.ZERO;
@@ -39,9 +39,9 @@ public final class ReportService {
     }
 
     /** Reservations na start sa selected date, kahit ano pa yung status. */
-    public List<ReservationReportRow> reservationsByDate(String actorId, LocalDate date) {
+    public List<ReservationReportRow> reservationsByDate(String sessionToken, LocalDate date) {
         LocalDate requiredDate = Objects.requireNonNull(date, "Report date is required.");
-        AppState state = authorizedSnapshot(actorId);
+        AppState state = authorizedSnapshot(sessionToken);
         return state.getReservations().stream()
                 .filter(reservation -> reservation.getStartTime().toLocalDate().equals(requiredDate))
                 .sorted(Comparator.comparing(Reservation::getStartTime)
@@ -51,8 +51,8 @@ public final class ReportService {
     }
 
     /** Lahat ng menu items kasama, kahit inactive or wala nang stock. */
-    public List<StockReportRow> remainingStock(String actorId) {
-        AppState state = authorizedSnapshot(actorId);
+    public List<StockReportRow> remainingStock(String sessionToken) {
+        AppState state = authorizedSnapshot(sessionToken);
         return state.getMenuItems().stream()
                 .sorted(Comparator.comparing(MenuItem::getName, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(MenuItem::getName)
@@ -61,9 +61,9 @@ public final class ReportService {
                 .toList();
     }
 
-    private AppState authorizedSnapshot(String actorId) {
+    private AppState authorizedSnapshot(String sessionToken) {
         AppState state = repository.snapshot();
-        AuthorizationService.require(state, actorId, Permission.VIEW_REPORTS);
+        AuthorizationService.require(state, sessionToken, Permission.VIEW_REPORTS);
         return state;
     }
 }

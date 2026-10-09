@@ -40,7 +40,7 @@ final class PaymentDialog {
     private static final String E_PAYMENT = "epay";
 
     private final ApplicationServices services;
-    private final String actorId;
+    private final String sessionToken;
     private final Bill bill;
     private final JDialog dialog;
     private final JTextField cash = new JTextField(12);
@@ -55,9 +55,9 @@ final class PaymentDialog {
     private String method = CASH;
     private PaymentReceipt receipt;
 
-    private PaymentDialog(Component parent, ApplicationServices services, String actorId, AppState state, String billId) {
+    private PaymentDialog(Component parent, ApplicationServices services, String sessionToken, AppState state, String billId) {
         this.services = services;
-        this.actorId = actorId;
+        this.sessionToken = sessionToken;
         this.bill = state.getBillOrThrow(billId);
         this.dialog = Dialogs.create(parent, "Take payment");
         DiningSession visit = state.getSessionOrThrow(bill.getSessionId());
@@ -101,9 +101,9 @@ final class PaymentDialog {
     }
 
     /** Opens the pop-up. Returns the receipt, or null when the user cancelled. */
-    static PaymentReceipt show(Component parent, ApplicationServices services, String actorId,
+    static PaymentReceipt show(Component parent, ApplicationServices services, String sessionToken,
                                AppState state, String billId) {
-        return new PaymentDialog(parent, services, actorId, state, billId).receipt;
+        return new PaymentDialog(parent, services, sessionToken, state, billId).receipt;
     }
 
     private JPanel cashCard() {
@@ -203,11 +203,11 @@ final class PaymentDialog {
                 if (received == null) {
                     throw new IllegalArgumentException("Enter the cash received.");
                 }
-                receipt = services.billing().acceptCash(actorId, bill.getId(), received);
+                receipt = services.billing().acceptCash(sessionToken, bill.getId(), received);
             } else {
                 String paidWith = provider.requireId("e-payment option")
                         + (reference.getText().isBlank() ? "" : " #" + reference.getText().trim());
-                receipt = services.billing().acceptElectronic(actorId, bill.getId(), paidWith);
+                receipt = services.billing().acceptElectronic(sessionToken, bill.getId(), paidWith);
             }
             dialog.dispose();
         } catch (RuntimeException problem) {

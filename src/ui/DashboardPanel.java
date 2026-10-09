@@ -46,7 +46,7 @@ public final class DashboardPanel extends JPanel implements Refreshable {
             KouzinaFrame.ORDERING, "Add food from the menu and send the order to the kitchen.",
             KouzinaFrame.KITCHEN, "Start cooking and mark orders ready to serve.",
             KouzinaFrame.BILLING, "Create the bill, take cash or e-payment, free the table.",
-            KouzinaFrame.MANAGER, "Menu and stock, reports, staff and profiles, audit log.");
+            KouzinaFrame.MANAGER, "Menu and stock, reports, accounts, audit log.");
 
     /** Step numbers shown on the four workflow cards. */
     private static final Map<String, String> STEPS = Map.of(
@@ -61,26 +61,26 @@ public final class DashboardPanel extends JPanel implements Refreshable {
     }
 
     private static final List<Stat> STATS = List.of(
-            new Stat("Bookings", "for today", List.of("Staff", "Waiter", "Manager"), Theme.Tone.GOOD,
+            new Stat("Bookings", "for today", List.of("Waiter", "Manager"), Theme.Tone.GOOD,
                     state -> state.getReservations().stream()
                             .filter(r -> r.getStartTime().toLocalDate().equals(LocalDate.now()))
                             .filter(r -> r.getStatus() != ReservationStatus.CANCELLED
                                     && r.getStatus() != ReservationStatus.NO_SHOW)
                             .count()),
-            new Stat("Free tables", "available now", List.of("Staff", "Waiter", "Manager"), Theme.Tone.GOOD,
+            new Stat("Free tables", "available now", List.of("Waiter", "Manager"), Theme.Tone.GOOD,
                     state -> state.getTables().stream()
                             .filter(t -> t.getStatus() == TableStatus.AVAILABLE).count()),
-            new Stat("Waiting list", "parties waiting", List.of("Staff", "Waiter", "Manager"), Theme.Tone.WAIT,
+            new Stat("Waiting list", "parties waiting", List.of("Waiter", "Manager"), Theme.Tone.WAIT,
                     state -> state.getWaitlistEntries().stream()
                             .filter(e -> e.getStatus() == WaitlistStatus.WAITING).count()),
-            new Stat("In the kitchen", "sent or cooking", List.of("Staff", "Chef", "Manager"), Theme.Tone.WAIT,
+            new Stat("In the kitchen", "sent or cooking", List.of("Chef", "Manager"), Theme.Tone.WAIT,
                     state -> state.getOrders().stream()
                             .filter(o -> o.getStatus() == OrderStatus.CONFIRMED
                                     || o.getStatus() == OrderStatus.PREPARING).count()),
-            new Stat("Ready to serve", "for pickup", List.of("Staff", "Waiter", "Chef", "Manager"), Theme.Tone.GOOD,
+            new Stat("Ready to serve", "for pickup", List.of("Waiter", "Chef", "Manager"), Theme.Tone.GOOD,
                     state -> state.getOrders().stream()
                             .filter(o -> o.getStatus() == OrderStatus.READY).count()),
-            new Stat("Unpaid bills", "to collect", List.of("Staff", "Cashier", "Manager"), Theme.Tone.BAD,
+            new Stat("Unpaid bills", "to collect", List.of("Cashier", "Manager"), Theme.Tone.BAD,
                     state -> state.getBills().stream()
                             .filter(b -> b.getStatus() == BillStatus.UNPAID).count()));
 
@@ -94,7 +94,6 @@ public final class DashboardPanel extends JPanel implements Refreshable {
     private final Set<String> visibleSections = new LinkedHashSet<>();
     private final List<JLabel[]> statLabels = new ArrayList<>();
     private final List<Stat> shownStats = new ArrayList<>();
-    private Portal portal = Portal.EMPLOYEE;
 
     public DashboardPanel(ApplicationServices services, Navigator navigator) {
         this.services = Objects.requireNonNull(services);
@@ -151,15 +150,11 @@ public final class DashboardPanel extends JPanel implements Refreshable {
         super.doLayout();
     }
 
-    public void setPortal(Portal portal) {
-        this.portal = Objects.requireNonNull(portal);
-    }
-
     public void setUser(AuthenticatedUser user) {
         String firstName = user.displayName().split(" ")[0];
         avatar.setPerson(user.displayName(), user.employeeId());
         greeting.setText(timeGreeting() + ", " + firstName + "!");
-        subtitle.setText(portal.label() + " Portal  ·  " + user.roleName() + "  ·  "
+        subtitle.setText(user.roleName() + "  ·  "
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")));
 
         statRow.removeAll();

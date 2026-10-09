@@ -1,52 +1,25 @@
 package bootstrap;
 
 import domain.BeverageItem;
-import domain.Cashier;
-import domain.Chef;
 import domain.Customer;
 import domain.FoodItem;
 import domain.RestaurantTable;
-import domain.Waiter;
 import persistence.AppState;
-import security.PasswordHasher;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /** Dito galing yung starter records pag bagong setup pa yung app. */
 public final class SampleDataFactory {
-    public static final String WAITER_ID = "employee-waiter";
-    public static final String CHEF_ID = "employee-chef";
-    public static final String CASHIER_ID = "employee-cashier";
-    public static final String MANAGER_ID = "employee-manager";
 
     private SampleDataFactory() {
     }
 
     public static AppState create() {
-        return create(new PasswordHasher());
-    }
-
-    public static AppState create(PasswordHasher passwordHasher) {
-        PasswordHasher hasher = Objects.requireNonNull(
-                passwordHasher, "Password hasher is required.");
         AppState state = new AppState();
-        addEmployees(state, hasher);
         addTables(state);
         addMenuItems(state);
         addCustomers(state);
         return state;
-    }
-
-    private static void addEmployees(AppState state, PasswordHasher hasher) {
-        state.addEmployee(new Waiter(
-                WAITER_ID, "waiter", "Wally Waiter", hash(hasher, "waiter123")));
-        state.addEmployee(new Chef(
-                CHEF_ID, "chef", "Casey Chef", hash(hasher, "chef123")));
-        state.addEmployee(new Cashier(
-                CASHIER_ID, "cashier", "Carmen Cashier", hash(hasher, "cashier123")));
-        // Shared logins (employee / manager), profiles, managers, and extra waiters
-        AccountSetup.ensureDefaults(state, hasher);
     }
 
     private static void addTables(AppState state) {
@@ -119,12 +92,4 @@ public final class SampleDataFactory {
                 servedCold));
     }
 
-    private static PasswordHasher.Credential hash(PasswordHasher hasher, String password) {
-        char[] characters = password.toCharArray();
-        try {
-            return hasher.hash(characters);
-        } finally {
-            java.util.Arrays.fill(characters, '\0');
-        }
-    }
 }

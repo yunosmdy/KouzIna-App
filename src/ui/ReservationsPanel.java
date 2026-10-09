@@ -479,7 +479,7 @@ public final class ReservationsPanel extends JPanel implements Refreshable {
     }
 
     private String actor() {
-        return currentUser.get().employeeId();
+        return currentUser.get().sessionToken();
     }
 
     private String bookingId() {

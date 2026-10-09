@@ -41,10 +41,25 @@ public final class ApplicationServices {
     public static ApplicationServices forDataFile(Path dataFile) {
         PasswordHasher hasher = new PasswordHasher();
         AppStateRepository repository = new FileAppStateRepository(
-                dataFile, () -> SampleDataFactory.create(hasher));
-        // Older save files: add the new logins, profiles, and waiters (nothing is removed)
-        if (AccountSetup.ensureDefaults(repository.snapshot(), hasher)) {
-            repository.transact(state -> AccountSetup.ensureDefaults(state, hasher));
+                dataFile, SampleDataFactory::create);
+        if (repository.snapshot().getAccountVersion() != 2) {
+            // Copy the exact old bytes before the first conversion. Never overwrite this backup.
+            Path backup = dataFile.resolveSibling(dataFile.getFileName() + ".pre-accounts-v2.bak");
+            try {
+                if (!java.nio.file.Files.exists(backup)) java.nio.file.Files.copy(dataFile, backup);
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("Cannot back up old data; migration was not started.", error);
+            }
+            repository.transact(state -> AccountSetup.migrate(state));
+        }
+        if (!repository.snapshot().hasPresetAccounts()) {
+            Path backup = dataFile.resolveSibling(dataFile.getFileName() + ".before-simple-login.bak");
+            try {
+                if (!java.nio.file.Files.exists(backup)) java.nio.file.Files.copy(dataFile, backup);
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("Cannot back up saved data before account update.", error);
+            }
+            repository.transact(state -> { PresetAccounts.install(state,hasher); return null; });
         }
         return new ApplicationServices(
                 repository, hasher, new UuidIdGenerator(), Clock.systemDefaultZone());

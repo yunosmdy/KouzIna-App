@@ -36,7 +36,7 @@ final class BillDialog {
     static final int[] DISCOUNTS = {0, 5, 10, 15, 20, 25, 50};
 
     private final ApplicationServices services;
-    private final String actorId;
+    private final String sessionToken;
     private final Bill existing;
     private final String visitId;
     private final BigDecimal subtotal;
@@ -52,10 +52,10 @@ final class BillDialog {
     private boolean saved;
 
     /** visitId: create a bill for this served visit. billId: change this unpaid bill. Pass one of them. */
-    private BillDialog(Component parent, ApplicationServices services, String actorId, AppState state,
+    private BillDialog(Component parent, ApplicationServices services, String sessionToken, AppState state,
                        String visitId, String billId) {
         this.services = services;
-        this.actorId = actorId;
+        this.sessionToken = sessionToken;
         this.existing = billId == null ? null : state.getBillOrThrow(billId);
         this.visitId = existing == null ? visitId : existing.getSessionId();
         DiningSession visit = state.getSessionOrThrow(this.visitId);
@@ -138,13 +138,13 @@ final class BillDialog {
     }
 
     /** Opens "Create bill". Returns true when a bill was created. */
-    static boolean create(Component parent, ApplicationServices services, String actorId, AppState state, String visitId) {
-        return new BillDialog(parent, services, actorId, state, visitId, null).saved;
+    static boolean create(Component parent, ApplicationServices services, String sessionToken, AppState state, String visitId) {
+        return new BillDialog(parent, services, sessionToken, state, visitId, null).saved;
     }
 
     /** Opens "Change bill" for an unpaid bill. Returns true when it was changed. */
-    static boolean change(Component parent, ApplicationServices services, String actorId, AppState state, String billId) {
-        return new BillDialog(parent, services, actorId, state, null, billId).saved;
+    static boolean change(Component parent, ApplicationServices services, String sessionToken, AppState state, String billId) {
+        return new BillDialog(parent, services, sessionToken, state, null, billId).saved;
     }
 
     private BigDecimal rate() {
@@ -179,9 +179,9 @@ final class BillDialog {
                 throw new IllegalArgumentException("Service charge must be a number.");
             }
             if (existing == null) {
-                services.billing().issueBill(actorId, visitId, rate(), charge);
+                services.billing().issueBill(sessionToken, visitId, rate(), charge);
             } else {
-                services.billing().changeBillCharges(actorId, existing.getId(), rate(), charge);
+                services.billing().changeBillCharges(sessionToken, existing.getId(), rate(), charge);
             }
             saved = true;
             dialog.dispose();

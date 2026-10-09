@@ -35,9 +35,9 @@ public final class SeatingService {
 
     /** Sabay dapat yung check-in, session, at draft order sa isang transaction. */
     public SeatingResult checkInReservation(
-            String actorId, String reservationId, String assignedWaiterId) {
+            String sessionToken, String reservationId, String assignedWaiterId) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.CHECK_IN_GUESTS);
+            AuthorizationService.require(state, sessionToken, Permission.CHECK_IN_GUESTS);
             AuthorizationService.requireActiveWaiter(state, assignedWaiterId);
 
             Reservation reservation = state.getReservationOrThrow(reservationId);
@@ -73,7 +73,7 @@ public final class SeatingService {
             state.addSessionAndOrder(session, order);
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     now,
                     "RESERVATION_CHECKED_IN",
                     "Checked in reservation " + reservation.getId()
@@ -85,9 +85,9 @@ public final class SeatingService {
 
     /** Sa waitlist muna lahat ng walk-in, upo agad pag may pwede nang table. */
     public SeatingResult registerWalkIn(
-            String actorId, String customerId, int partySize, String assignedWaiterId) {
+            String sessionToken, String customerId, int partySize, String assignedWaiterId) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_WAITLIST);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_WAITLIST);
             AuthorizationService.requireActiveWaiter(state, assignedWaiterId);
             state.getCustomerOrThrow(customerId);
             if (partySize <= 0 || state.getTables().stream().noneMatch(table -> table.canSeat(partySize))) {
@@ -110,7 +110,7 @@ public final class SeatingService {
             if (availableTable.isEmpty()) {
                 addAudit(
                         state,
-                        actorId,
+                        sessionToken,
                         now,
                         "WALK_IN_QUEUED",
                         "Queued walk-in " + entry.getId() + " for customer " + customerId + ".");
@@ -122,7 +122,7 @@ public final class SeatingService {
                     state, entry, table, assignedWaiterId, now);
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     now,
                     "WALK_IN_SEATED",
                     "Seated walk-in " + entry.getId()
@@ -136,9 +136,9 @@ public final class SeatingService {
      * Pag di kasya, same spot pa rin sila sa pila, di ililipat sa dulo.
      */
     public Optional<SeatingResult> seatNextCompatibleParty(
-            String actorId, String tableId, String assignedWaiterId) {
+            String sessionToken, String tableId, String assignedWaiterId) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.CHECK_IN_GUESTS);
+            AuthorizationService.require(state, sessionToken, Permission.CHECK_IN_GUESTS);
             AuthorizationService.requireActiveWaiter(state, assignedWaiterId);
 
             RestaurantTable table = state.getTableOrThrow(tableId);
@@ -164,7 +164,7 @@ public final class SeatingService {
                     state, selected, table, assignedWaiterId, now);
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     now,
                     "WAITLIST_PARTY_SEATED",
                     "Seated waitlist entry " + selected.getId()
@@ -262,11 +262,11 @@ public final class SeatingService {
 
     private void addAudit(
             AppState state,
-            String actorId,
+            String sessionToken,
             LocalDateTime timestamp,
             String action,
             String detail) {
         state.addAuditLog(new AuditLog(
-                idGenerator.nextId(), timestamp, actorId, action, detail));
+                idGenerator.nextId(), timestamp, AuthorizationService.employeeId(state, sessionToken), action, detail));
     }
 }

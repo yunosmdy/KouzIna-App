@@ -40,9 +40,11 @@ public final class KouzinaApp {
             return Path.of(override).toAbsolutePath().normalize();
         }
         Path workingFolder = Path.of("").toAbsolutePath().normalize();
-        // VS Code and Run.bat start in the project folder (the one with src/ and data/)
-        if (Files.isDirectory(workingFolder.resolve("src"))) {
-            return workingFolder.resolve("data/kouzina.dat");
+        // VS Code may be opened at src/ or out/. Use the owning project, not its Java cache.
+        for (Path folder = workingFolder; folder != null; folder = folder.getParent()) {
+            if (Files.isRegularFile(folder.resolve("src/KouzinaApp.java"))) {
+                return folder.resolve("data/kouzina.dat");
+            }
         }
         Path applicationLocation = Path.of(KouzinaApp.class.getProtectionDomain()
                 .getCodeSource().getLocation().toURI());

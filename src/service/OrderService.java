@@ -45,9 +45,9 @@ public final class OrderService {
 
     /** Idinadagdag ang item kasama ang current name at price nito sa order. */
     public void addItem(
-            String actorId, String orderId, String menuItemId, int quantity) {
+            String sessionToken, String orderId, String menuItemId, int quantity) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_DRAFT_ORDERS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_DRAFT_ORDERS);
             Order order = state.getOrderOrThrow(orderId);
             requireDraft(order, "add items to");
             MenuItem menuItem = state.getMenuItemOrThrow(menuItemId);
@@ -57,26 +57,26 @@ public final class OrderService {
     }
 
     public void updateItemQuantity(
-            String actorId, String orderId, String menuItemId, int quantity) {
+            String sessionToken, String orderId, String menuItemId, int quantity) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_DRAFT_ORDERS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_DRAFT_ORDERS);
             state.getOrderOrThrow(orderId).updateItemQuantity(menuItemId, quantity);
             return null;
         });
     }
 
-    public void removeItem(String actorId, String orderId, String menuItemId) {
+    public void removeItem(String sessionToken, String orderId, String menuItemId) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_DRAFT_ORDERS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_DRAFT_ORDERS);
             state.getOrderOrThrow(orderId).removeItem(menuItemId);
             return null;
         });
     }
 
     /** Chine-check muna ang buong order bago magbawas ng stock. */
-    public void confirmOrder(String actorId, String orderId) {
+    public void confirmOrder(String sessionToken, String orderId) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.CONFIRM_ORDERS);
+            AuthorizationService.require(state, sessionToken, Permission.CONFIRM_ORDERS);
             Order order = state.getOrderOrThrow(orderId);
             requireDraft(order, "confirm");
 
@@ -100,7 +100,7 @@ public final class OrderService {
             order.confirm();
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     LocalDateTime.now(clock),
                     "ORDER_CONFIRMED",
                     "Confirmed order " + order.getId() + ".");
@@ -113,9 +113,9 @@ public final class OrderService {
      * Retry kapag mali ang naipadala: ibabalik sa "Taking order" ang order na nasa kitchen pa
      * pero hindi pa sinisimulang lutuin. Ibinabalik din ang stock na nabawas noong ipinadala.
      */
-    public void recallOrder(String actorId, String orderId) {
+    public void recallOrder(String sessionToken, String orderId) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.CONFIRM_ORDERS);
+            AuthorizationService.require(state, sessionToken, Permission.CONFIRM_ORDERS);
             Order order = state.getOrderOrThrow(orderId);
             if (order.getStatus() != OrderStatus.CONFIRMED) {
                 throw new InvalidTransitionException(order.getStatus() == OrderStatus.DRAFT
@@ -129,7 +129,7 @@ public final class OrderService {
             order.recall();
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     LocalDateTime.now(clock),
                     "ORDER_RECALLED",
                     "Took order " + order.getId() + " back from the kitchen to fix it.");
@@ -139,17 +139,17 @@ public final class OrderService {
     }
 
     /** Kinakansela ang order bago ang preparation at vino-void ang active dining session nito. */
-    public CancellationResult cancelOrder(String actorId, String orderId) {
+    public CancellationResult cancelOrder(String sessionToken, String orderId) {
         CancellationResult result = repository.transact(state -> {
             Order order = state.getOrderOrThrow(orderId);
             boolean stockRestored;
             if (order.getStatus() == OrderStatus.DRAFT) {
                 AuthorizationService.require(
-                        state, actorId, Permission.MANAGE_DRAFT_ORDERS);
+                        state, sessionToken, Permission.MANAGE_DRAFT_ORDERS);
                 stockRestored = false;
             } else if (order.getStatus() == OrderStatus.CONFIRMED) {
                 AuthorizationService.require(
-                        state, actorId, Permission.CANCEL_CONFIRMED_ORDERS);
+                        state, sessionToken, Permission.CANCEL_CONFIRMED_ORDERS);
                 stockRestored = true;
             } else {
                 throw invalidCancellation(order);
@@ -181,7 +181,7 @@ public final class OrderService {
             }
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     now,
                     "ORDER_CANCELLED",
                     "Cancelled order " + order.getId()
@@ -210,11 +210,11 @@ public final class OrderService {
 
     private void addAudit(
             AppState state,
-            String actorId,
+            String sessionToken,
             LocalDateTime timestamp,
             String action,
             String detail) {
         state.addAuditLog(new AuditLog(
-                idGenerator.nextId(), timestamp, actorId, action, detail));
+                idGenerator.nextId(), timestamp, AuthorizationService.employeeId(state, sessionToken), action, detail));
     }
 }

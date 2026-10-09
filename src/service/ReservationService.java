@@ -30,21 +30,21 @@ public final class ReservationService {
     }
 
     public String createReservation(
-            String actorId, String customerId, LocalDateTime start,
+            String sessionToken, String customerId, LocalDateTime start,
             LocalDateTime end, int partySize) {
-        return createReservation(actorId, customerId, start, end, partySize, false);
+        return createReservation(sessionToken, customerId, start, end, partySize, false);
     }
 
     /** A booking either gets a table and saves, or leaves no incomplete record. */
-    public String bookTable(String actorId, String customerId, LocalDateTime start,
+    public String bookTable(String sessionToken, String customerId, LocalDateTime start,
             LocalDateTime end, int partySize) {
-        return createReservation(actorId, customerId, start, end, partySize, true);
+        return createReservation(sessionToken, customerId, start, end, partySize, true);
     }
 
-    private String createReservation(String actorId, String customerId, LocalDateTime start,
+    private String createReservation(String sessionToken, String customerId, LocalDateTime start,
             LocalDateTime end, int partySize, boolean confirmNow) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_RESERVATIONS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_RESERVATIONS);
             state.getCustomerOrThrow(customerId);
             if (start == null || start.isBefore(LocalDateTime.now(clock))) {
                 throw new exception.ValidationException("Choose a reservation date and time in the future.");
@@ -61,39 +61,39 @@ public final class ReservationService {
                 reservation.confirm(table.getId());
             }
             state.addReservation(reservation);
-            addAudit(state, actorId, "RESERVATION_CREATED",
+            addAudit(state, sessionToken, "RESERVATION_CREATED",
                     "Created reservation " + reservation.getId()
                             + " for customer " + reservation.getCustomerId() + ".");
             return reservation.getId();
         });
     }
 
-    public Optional<String> recommendTable(String actorId, String reservationId) {
+    public Optional<String> recommendTable(String sessionToken, String reservationId) {
         AppState state = repository.snapshot();
-        AuthorizationService.require(state, actorId, Permission.MANAGE_RESERVATIONS);
+        AuthorizationService.require(state, sessionToken, Permission.MANAGE_RESERVATIONS);
         Reservation reservation = state.getReservationOrThrow(reservationId);
         return findRecommendedTable(state, reservation).map(RestaurantTable::getId);
     }
 
-    public String confirmReservation(String actorId, String reservationId) {
+    public String confirmReservation(String sessionToken, String reservationId) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_RESERVATIONS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_RESERVATIONS);
             Reservation reservation = state.getReservationOrThrow(reservationId);
             RestaurantTable table = findRecommendedTable(state, reservation)
                     .orElseThrow(() -> new UnavailableException(
                             "No table is available for reservation " + reservation.getId() + "."));
 
             reservation.confirm(table.getId());
-            addAudit(state, actorId, "RESERVATION_CONFIRMED",
+            addAudit(state, sessionToken, "RESERVATION_CONFIRMED",
                     "Confirmed reservation " + reservation.getId()
                             + " for table " + table.getId() + ".");
             return table.getId();
         });
     }
 
-    public void cancelReservation(String actorId, String reservationId) {
+    public void cancelReservation(String sessionToken, String reservationId) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_RESERVATIONS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_RESERVATIONS);
             Reservation reservation = state.getReservationOrThrow(reservationId);
             if (reservation.getStatus() == ReservationStatus.CHECKED_IN) {
                 throw new InvalidTransitionException(
@@ -101,18 +101,18 @@ public final class ReservationService {
                                 + "to close the visit; confirmed orders require a manager.");
             }
             reservation.cancel();
-            addAudit(state, actorId, "RESERVATION_CANCELLED",
+            addAudit(state, sessionToken, "RESERVATION_CANCELLED",
                     "Cancelled reservation " + reservation.getId() + ".");
             return null;
         });
     }
 
-    public void markNoShow(String actorId, String reservationId) {
+    public void markNoShow(String sessionToken, String reservationId) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_RESERVATIONS);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_RESERVATIONS);
             Reservation reservation = state.getReservationOrThrow(reservationId);
             reservation.markNoShow(LocalDateTime.now(clock));
-            addAudit(state, actorId, "RESERVATION_NO_SHOW",
+            addAudit(state, sessionToken, "RESERVATION_NO_SHOW",
                     "Marked reservation " + reservation.getId() + " as no-show.");
             return null;
         });
@@ -154,8 +154,8 @@ public final class ReservationService {
                 .anyMatch(session -> session.getOpenedAt().isBefore(requestedReservation.getEndTime()));
     }
 
-    private void addAudit(AppState state, String actorId, String action, String detail) {
+    private void addAudit(AppState state, String sessionToken, String action, String detail) {
         state.addAuditLog(new AuditLog(
-                idGenerator.nextId(), LocalDateTime.now(clock), actorId, action, detail));
+                idGenerator.nextId(), LocalDateTime.now(clock), AuthorizationService.employeeId(state, sessionToken), action, detail));
     }
 }

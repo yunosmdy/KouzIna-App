@@ -29,11 +29,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Main window. Screens, in order:
- *   1. Welcome ("Log in as Employee / Manager")
- *   2. Login (username + password)
- *   3. Profile picker (only after the shared "employee" or "manager" login)
- *   4. The app: sidebar on the left, the chosen screen on the right, status bar at the bottom
+ * Individual login followed by a dashboard built for the authenticated role.
+ * Screen callbacks belong to one login and are discarded when it ends.
  */
 public final class KouzinaFrame extends JFrame implements Navigator {
     public static final String DASHBOARD = "dashboard";
@@ -43,9 +40,7 @@ public final class KouzinaFrame extends JFrame implements Navigator {
     public static final String BILLING = "billing";
     public static final String MANAGER = "manager";
 
-    private static final String WELCOME = "welcome";
     private static final String LOGIN = "login";
-    private static final String PROFILES = "profiles";
     private static final String APP = "app";
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("EEE, MMM d  ·  h:mm a");
     /** Smallest size a screen needs; smaller windows get scrollbars instead of cut-off buttons. */
@@ -61,10 +56,10 @@ public final class KouzinaFrame extends JFrame implements Navigator {
 
     static final List<Section> SECTIONS = List.of(
             new Section(DASHBOARD, "Dashboard", "home", "F1", List.of()),
-            new Section(RESERVATIONS, "Guests & Tables", "calendar", "F2", List.of("Staff", "Waiter", "Manager")),
-            new Section(ORDERING, "Orders", "order", "F3", List.of("Staff", "Waiter", "Manager")),
-            new Section(KITCHEN, "Kitchen", "kitchen", "F4", List.of("Staff", "Chef", "Manager")),
-            new Section(BILLING, "Billing", "billing", "F5", List.of("Staff", "Cashier", "Manager")),
+            new Section(RESERVATIONS, "Guests & Tables", "calendar", "F2", List.of("Waiter", "Manager")),
+            new Section(ORDERING, "Orders", "order", "F3", List.of("Waiter", "Manager")),
+            new Section(KITCHEN, "Kitchen", "kitchen", "F4", List.of("Chef", "Manager")),
+            new Section(BILLING, "Billing", "billing", "F5", List.of("Cashier", "Manager")),
             new Section(MANAGER, "Manager Tools", "chart", "F6", List.of("Manager")));
 
     private final ApplicationServices services;
@@ -74,8 +69,7 @@ public final class KouzinaFrame extends JFrame implements Navigator {
     private final JPanel content = new JPanel(contentLayout);
     private final Map<String, Component> screens = new LinkedHashMap<>();
     private final LoginPanel loginPanel;
-    private final ProfilePickerPanel profilePicker;
-    private final DashboardPanel dashboardPanel;
+    private DashboardPanel dashboardPanel;
     private final Sidebar sidebar;
     private final JLabel statusMessage = new JLabel();
     private final JLabel statusUser = new JLabel();
@@ -91,35 +85,22 @@ public final class KouzinaFrame extends JFrame implements Navigator {
         }
     };
     private AuthenticatedUser currentUser;
-    /** The shared "employee"/"manager" login, kept so "Switch profile" does not need the password again. */
-    private AuthenticatedUser sharedLogin;
-    private Portal portal = Portal.EMPLOYEE;
     private String currentScreen = DASHBOARD;
 
     public KouzinaFrame(ApplicationServices services) {
         super(Theme.BRAND);
         this.services = services;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        useLogoAsAppIcon();
         fitToScreen();
 
-        loginPanel = new LoginPanel(services.authentication(), this::loggedIn, () -> rootLayout.show(root, WELCOME));
-        profilePicker = new ProfilePickerPanel(services, this::startSession, this::logout);
-        dashboardPanel = new DashboardPanel(services, this);
-        sidebar = new Sidebar(this::switchProfile, this::logout);
-
-        addScreen(DASHBOARD, dashboardPanel);
-        addScreen(RESERVATIONS, new ReservationsPanel(services, this::currentUser, this));
-        addScreen(ORDERING, new OrderingPanel(services, this::currentUser, this));
-        addScreen(KITCHEN, new KitchenPanel(services, this::currentUser, this));
-        addScreen(BILLING, new BillingPanel(services, this::currentUser, this));
-        addScreen(MANAGER, new ManagerPanel(services, this::currentUser));
+        loginPanel = new LoginPanel(services, this::startSession);
+        sidebar = new Sidebar(this::logout);
         for (Section section : SECTIONS) {
             sidebar.addItem(section.key(), section.label(), section.icon(), section.shortcut(), this::open);
         }
 
-        root.add(UiSupport.scrollPage(new RolePickerPanel(this::pickPortal), 880, 540), WELCOME);
         root.add(UiSupport.scrollPage(loginPanel, 880, 540), LOGIN);
-        root.add(UiSupport.scrollPage(profilePicker, 640, 560), PROFILES);
         root.add(appShell(), APP);
         setContentPane(root);
         installShortcuts();
@@ -130,15 +111,47 @@ public final class KouzinaFrame extends JFrame implements Navigator {
         Timer clock = new Timer(20_000, event -> statusClock.setText(LocalDateTime.now().format(CLOCK)));
         clock.setInitialDelay(0);
         clock.start();
+        Timer accessCheck = new Timer(1000, event -> {
+            if (currentUser != null) {
+                try { currentUser(); } catch (RuntimeException ignored) { }
+            }
+        });
+        accessCheck.start();
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent event) { logout(); }
+            @Override public void windowClosed(java.awt.event.WindowEvent event) { clock.stop(); accessCheck.stop(); }
+        });
 
-        rootLayout.show(root, WELCOME);
+        rootLayout.show(root, LOGIN);
+    }
+
+    /** Window, title-bar and taskbar icon: photos/logo.png instead of the default Java icon. */
+    private void useLogoAsAppIcon() {
+        java.awt.image.BufferedImage logo = Photos.logo();
+        if (logo == null) {
+            return;
+        }
+        List<java.awt.Image> icons = new java.util.ArrayList<>();
+        for (int size : new int[]{16, 20, 24, 32, 40, 48, 64, 128, 256}) {
+            icons.add(logo.getScaledInstance(size, size, java.awt.Image.SCALE_SMOOTH));
+        }
+        setIconImages(icons);
+        try {
+            if (java.awt.Taskbar.isTaskbarSupported()
+                    && java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                java.awt.Taskbar.getTaskbar().setIconImage(icons.get(icons.size() - 1));
+            }
+        } catch (RuntimeException ignored) {
+            // some systems do not allow changing the taskbar icon; the window icon is still set
+        }
     }
 
     public AuthenticatedUser currentUser() {
         if (currentUser == null) {
             throw new IllegalStateException("No employee is signed in.");
         }
-        return currentUser;
+        try { return services.authentication().validateSession(currentUser); }
+        catch (RuntimeException error) { logout(); throw error; }
     }
 
     // ---------- Navigator ----------
@@ -150,12 +163,10 @@ public final class KouzinaFrame extends JFrame implements Navigator {
 
     @Override
     public void open(String screen, String orderId) {
+        if (!canOpen(screen)) return;
         Component target = screens.get(screen);
         if (target == null) {
             throw new IllegalArgumentException("Unknown screen " + screen + ".");
-        }
-        if (!canOpen(screen)) {
-            return;
         }
         if (target instanceof Refreshable refreshable) {
             refreshable.refreshData();
@@ -175,7 +186,10 @@ public final class KouzinaFrame extends JFrame implements Navigator {
         if (currentUser == null) {
             return false;
         }
-        return SECTIONS.stream().anyMatch(s -> s.key().equals(screen) && s.allows(currentUser.roleName()));
+        try {
+            AuthenticatedUser user = currentUser();
+            return SECTIONS.stream().anyMatch(s -> s.key().equals(screen) && s.allows(user.roleName()));
+        } catch (RuntimeException error) { return false; }
     }
 
     // ---------- Layout ----------
@@ -263,54 +277,39 @@ public final class KouzinaFrame extends JFrame implements Navigator {
 
     // ---------- Signing in ----------
 
-    /** Welcome screen choice: Employee or Manager. */
-    private void pickPortal(Portal picked) {
-        portal = picked;
-        loginPanel.setPortal(picked);
-        loginPanel.clearFields();
-        rootLayout.show(root, LOGIN);
-    }
-
-    /** Username + password accepted. Shared logins go to the profile picker first. */
-    private void loggedIn(AuthenticatedUser user) {
-        if (services.authentication().isSharedLogin(user)) {
-            sharedLogin = user;
-            profilePicker.showFor(user, portal);
-            rootLayout.show(root, PROFILES);
-        } else {
-            sharedLogin = null;
-            startSession(user);
-        }
-    }
-
-    /** A profile was picked (or an individual account signed in): open the dashboard. */
+    /** Every screen callback is bound to this login; old callbacks cannot act as the next user. */
     private void startSession(AuthenticatedUser user) {
+        services.authentication().validateSession(user);
         currentUser = user;
-        for (Section section : SECTIONS) {
-            sidebar.setItemVisible(section.key(), section.allows(user.roleName()));
-        }
-        dashboardPanel.setPortal(portal);
+        java.util.function.Supplier<AuthenticatedUser> sessionUser = () -> {
+            if (currentUser != user) throw new exception.AuthorizationException("This screen belongs to a previous login.");
+            return currentUser();
+        };
+        screens.clear(); content.removeAll();
+        dashboardPanel = new DashboardPanel(services, this);
+        addScreen(DASHBOARD, dashboardPanel);
+        if (canOpen(RESERVATIONS)) addScreen(RESERVATIONS, new ReservationsPanel(services, sessionUser, this));
+        if (canOpen(ORDERING)) addScreen(ORDERING, new OrderingPanel(services, sessionUser, this));
+        if (canOpen(KITCHEN)) addScreen(KITCHEN, new KitchenPanel(services, sessionUser, this));
+        if (canOpen(BILLING)) addScreen(BILLING, new BillingPanel(services, sessionUser, this));
+        if (canOpen(MANAGER)) addScreen(MANAGER, new ManagerPanel(services, sessionUser));
+        for (Section section : SECTIONS) sidebar.setItemVisible(section.key(), section.allows(user.roleName()));
         dashboardPanel.setUser(user);
-        sidebar.setPortal(portal.label() + " Portal");
-        sidebar.setProfile(user.displayName(), user.employeeId(), user.roleName(), sharedLogin != null);
+        sidebar.setPortal("Individual account");
+        sidebar.setProfile(user.displayName(), user.employeeId(), user.roleName());
         statusUser.setText("Signed in as " + user.displayName() + "  ·  " + user.roleName());
         open(DASHBOARD);
     }
 
-    private void switchProfile() {
-        if (sharedLogin == null) {
-            return;
-        }
-        currentUser = null;
-        profilePicker.showFor(sharedLogin, portal);
-        rootLayout.show(root, PROFILES);
-    }
-
     private void logout() {
+        AuthenticatedUser previous = currentUser;
         currentUser = null;
-        sharedLogin = null;
-        loginPanel.clearFields();
-        rootLayout.show(root, WELCOME);
+        try { services.authentication().logout(previous); }
+        catch (RuntimeException error) { /* Logout still revokes the token if saving the audit fails. */ }
+        for (java.awt.Window window : getOwnedWindows()) window.dispose();
+        screens.clear(); content.removeAll();
+        loginPanel.clearFields(); loginPanel.refreshMode();
+        rootLayout.show(root, LOGIN);
     }
 
     /** Bottom bar: how many orders are ready to be served. */

@@ -49,12 +49,12 @@ public final class BillingService {
 
     /** Save yung fixed charges pag served na yung order at open pa yung session. */
     public String issueBill(
-            String actorId,
+            String sessionToken,
             String sessionId,
             BigDecimal discountRate,
             BigDecimal serviceCharge) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.ISSUE_BILLS);
+            AuthorizationService.require(state, sessionToken, Permission.ISSUE_BILLS);
             DiningSession session = state.getSessionOrThrow(sessionId);
             if (!session.isOpen()) {
                 throw new InvalidTransitionException(
@@ -81,7 +81,7 @@ public final class BillingService {
             state.addBill(bill);
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     now,
                     "BILL_ISSUED",
                     "Issued bill " + bill.getId() + " for dining session "
@@ -92,18 +92,18 @@ public final class BillingService {
 
     /** Itinatama ang discount / service charge ng bill na hindi pa bayad (retry kapag mali ang na-type). */
     public void changeBillCharges(
-            String actorId,
+            String sessionToken,
             String billId,
             BigDecimal discountRate,
             BigDecimal serviceCharge) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.ISSUE_BILLS);
+            AuthorizationService.require(state, sessionToken, Permission.ISSUE_BILLS);
             Bill bill = requirePayableBill(state, billId);
             BigDecimal oldTotal = bill.getGrandTotal();
             bill.changeCharges(discountRate, serviceCharge);
             addAudit(
                     state,
-                    actorId,
+                    sessionToken,
                     LocalDateTime.now(clock),
                     "BILL_CHANGED",
                     "Changed bill " + bill.getId() + " total from " + oldTotal
@@ -114,9 +114,9 @@ public final class BillingService {
 
     /** Bill total lang yung applied, yung sobra sa cash ibabalik as sukli. */
     public PaymentReceipt acceptCash(
-            String actorId, String billId, BigDecimal tendered) {
+            String sessionToken, String billId, BigDecimal tendered) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.ACCEPT_PAYMENTS);
+            AuthorizationService.require(state, sessionToken, Permission.ACCEPT_PAYMENTS);
             Bill bill = requirePayableBill(state, billId);
             LocalDateTime now = LocalDateTime.now(clock);
             Payment payment = paymentFactory.createCash(
@@ -125,15 +125,15 @@ public final class BillingService {
                     bill.getGrandTotal(),
                     tendered,
                     now);
-            return completePayment(state, actorId, bill, payment, now);
+            return completePayment(state, sessionToken, bill, payment, now);
         });
     }
 
     /** Simulated e-payment to, dapat sakto sa bill total yung amount. */
     public PaymentReceipt acceptElectronic(
-            String actorId, String billId, String reference) {
+            String sessionToken, String billId, String reference) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.ACCEPT_PAYMENTS);
+            AuthorizationService.require(state, sessionToken, Permission.ACCEPT_PAYMENTS);
             Bill bill = requirePayableBill(state, billId);
             LocalDateTime now = LocalDateTime.now(clock);
             Payment payment = paymentFactory.createElectronic(
@@ -142,7 +142,7 @@ public final class BillingService {
                     bill.getGrandTotal(),
                     reference,
                     now);
-            return completePayment(state, actorId, bill, payment, now);
+            return completePayment(state, sessionToken, bill, payment, now);
         });
     }
 
@@ -162,7 +162,7 @@ public final class BillingService {
 
     private PaymentReceipt completePayment(
             AppState state,
-            String actorId,
+            String sessionToken,
             Bill bill,
             Payment payment,
             LocalDateTime now) {
@@ -176,7 +176,7 @@ public final class BillingService {
         table.release();
         addAudit(
                 state,
-                actorId,
+                sessionToken,
                 now,
                 "PAYMENT_ACCEPTED",
                 "Accepted " + payment.getMethod() + " payment " + payment.getId()
@@ -218,11 +218,11 @@ public final class BillingService {
 
     private void addAudit(
             AppState state,
-            String actorId,
+            String sessionToken,
             LocalDateTime timestamp,
             String action,
             String detail) {
         state.addAuditLog(new AuditLog(
-                idGenerator.nextId(), timestamp, actorId, action, detail));
+                idGenerator.nextId(), timestamp, AuthorizationService.employeeId(state, sessionToken), action, detail));
     }
 }

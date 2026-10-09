@@ -18,9 +18,9 @@ public final class AuditService {
     }
 
     /** Copy ng audit logs na sorted by time, di pwede i-edit yung list. */
-    public List<AuditLog> getAuditLog(String actorId) {
+    public List<AuditLog> getAuditLog(String sessionToken) {
         AppState state = repository.snapshot();
-        AuthorizationService.require(state, actorId, Permission.VIEW_AUDIT_LOG);
+        AuthorizationService.require(state, sessionToken, Permission.VIEW_AUDIT_LOG);
         return state.getAuditLogs().stream()
                 .sorted(Comparator.comparing(AuditLog::getTimestamp)
                         .thenComparing(AuditLog::getId))

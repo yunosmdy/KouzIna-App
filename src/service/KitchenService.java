@@ -39,16 +39,16 @@ public final class KitchenService {
     }
 
     /** Build ulit yung queue gamit current orders, same order kung pano na-add. */
-    public List<KitchenTicket> getQueue(String actorId) {
+    public List<KitchenTicket> getQueue(String sessionToken) {
         AppState state = repository.snapshot();
-        AuthorizationService.require(state, actorId, Permission.VIEW_KITCHEN_QUEUE);
+        AuthorizationService.require(state, sessionToken, Permission.VIEW_KITCHEN_QUEUE);
 
         return KitchenQueue.from(state).tickets();
     }
 
-    public void markPreparing(String actorId, String orderId) {
+    public void markPreparing(String sessionToken, String orderId) {
         changeStatus(
-                actorId,
+                sessionToken,
                 orderId,
                 Permission.UPDATE_KITCHEN_STATUS,
                 Order::markPreparing,
@@ -57,9 +57,9 @@ public final class KitchenService {
                 "Marked order %s as preparing at table %d.");
     }
 
-    public void markReady(String actorId, String orderId) {
+    public void markReady(String sessionToken, String orderId) {
         changeStatus(
-                actorId,
+                sessionToken,
                 orderId,
                 Permission.UPDATE_KITCHEN_STATUS,
                 Order::markReady,
@@ -68,9 +68,9 @@ public final class KitchenService {
                 "Marked order %s as ready at table %d.");
     }
 
-    public void markServed(String actorId, String orderId) {
+    public void markServed(String sessionToken, String orderId) {
         changeStatus(
-                actorId,
+                sessionToken,
                 orderId,
                 Permission.MARK_ORDERS_SERVED,
                 Order::markServed,
@@ -80,7 +80,7 @@ public final class KitchenService {
     }
 
     private void changeStatus(
-            String actorId,
+            String sessionToken,
             String orderId,
             Permission permission,
             Consumer<Order> transition,
@@ -88,7 +88,7 @@ public final class KitchenService {
             String auditAction,
             String auditDetailFormat) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, permission);
+            AuthorizationService.require(state, sessionToken, permission);
             Order order = state.getOrderOrThrow(orderId);
             RestaurantTable table = resolveTable(state, order);
 
@@ -96,7 +96,7 @@ public final class KitchenService {
             state.addAuditLog(new AuditLog(
                     idGenerator.nextId(),
                     LocalDateTime.now(clock),
-                    actorId,
+                    AuthorizationService.employeeId(state, sessionToken),
                     auditAction,
                     auditDetailFormat.formatted(order.getId(), table.getTableNumber())));
             return null;

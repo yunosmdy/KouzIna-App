@@ -282,6 +282,6 @@ public final class BillingPanel extends JPanel implements Refreshable, OrderFocu
     }
 
     private String actor() {
-        return currentUser.get().employeeId();
+        return currentUser.get().sessionToken();
     }
 }

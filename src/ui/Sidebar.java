@@ -32,9 +32,8 @@ public final class Sidebar extends JPanel {
     private final Avatar avatar = new Avatar(40, true);
     private final JLabel profileName = new JLabel();
     private final JLabel profileRole = new JLabel();
-    private final NavItem switchItem;
 
-    public Sidebar(Runnable switchProfile, Runnable logout) {
+    public Sidebar(Runnable logout) {
         setLayout(new BorderLayout());
         setBackground(Theme.CREAM);
         setPreferredSize(new Dimension(WIDTH, 0));
@@ -47,7 +46,7 @@ public final class Sidebar extends JPanel {
         itemColumn.setBorder(BorderFactory.createEmptyBorder(22, 0, 0, 0));
         add(itemColumn, BorderLayout.CENTER);
 
-        // Bottom: who is signed in, Switch profile, Log out
+        // Bottom: who is signed in, Log out
         JPanel bottom = new JPanel();
         bottom.setOpaque(false);
         bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
@@ -65,20 +64,17 @@ public final class Sidebar extends JPanel {
         profile.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
         bottom.add(profile);
         bottom.add(Box.createVerticalStrut(8));
-        switchItem = new NavItem("swap", "Switch profile", null, key -> switchProfile.run());
-        bottom.add(switchItem);
         NavItem logoutItem = new NavItem("logout", "Log out", null, key -> logout.run());
         logoutItem.accent = Theme.GREEN_DARK;
         bottom.add(logoutItem);
         add(bottom, BorderLayout.SOUTH);
     }
 
-    /** Shows the signed-in profile at the bottom of the sidebar. */
-    public void setProfile(String name, String colorKey, String role, boolean canSwitch) {
+    /** Shows the signed-in employee at the bottom of the sidebar. */
+    public void setProfile(String name, String colorKey, String role) {
         avatar.setPerson(name, colorKey);
         profileName.setText(name);
         profileRole.setText(role);
-        switchItem.setVisible(canSwitch);
     }
 
     public void addItem(String key, String label, String icon, String shortcut, Consumer<String> onClick) {
@@ -116,7 +112,7 @@ public final class Sidebar extends JPanel {
         brand.setOpaque(false);
         brand.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
 
-        // Space reserved for the logo (add logo.png to the Code folder to show it)
+        // Restaurant logo (photos/logo.png)
         brand.add(new LogoSpot(42, Theme.ORANGE_DARK), BorderLayout.WEST);
 
         JPanel words = new JPanel(new BorderLayout());

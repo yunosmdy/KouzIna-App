@@ -30,10 +30,10 @@ public final class MenuService {
     }
 
     public String createFood(
-            String actorId, String name, BigDecimal unitPrice, int stockQuantity,
+            String sessionToken, String name, BigDecimal unitPrice, int stockQuantity,
             String portionDescription) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_MENU);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_MENU);
             FoodItem item = new FoodItem(
                     idGenerator.nextId(), name, unitPrice, stockQuantity, portionDescription);
             state.addMenuItem(item);
@@ -42,10 +42,10 @@ public final class MenuService {
     }
 
     public String createBeverage(
-            String actorId, String name, BigDecimal unitPrice, int stockQuantity,
+            String sessionToken, String name, BigDecimal unitPrice, int stockQuantity,
             int volumeMl, boolean servedCold) {
         return repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_MENU);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_MENU);
             BeverageItem item = new BeverageItem(
                     idGenerator.nextId(), name, unitPrice, stockQuantity, volumeMl, servedCold);
             state.addMenuItem(item);
@@ -54,40 +54,40 @@ public final class MenuService {
     }
 
     public void updateDetails(
-            String actorId, String menuItemId, String name, BigDecimal unitPrice) {
+            String sessionToken, String menuItemId, String name, BigDecimal unitPrice) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_MENU);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_MENU);
             state.getMenuItemOrThrow(menuItemId).updateDetails(name, unitPrice);
             return null;
         });
     }
 
-    public void activate(String actorId, String menuItemId) {
-        changeActiveStatus(actorId, menuItemId, true);
+    public void activate(String sessionToken, String menuItemId) {
+        changeActiveStatus(sessionToken, menuItemId, true);
     }
 
-    public void deactivate(String actorId, String menuItemId) {
-        changeActiveStatus(actorId, menuItemId, false);
+    public void deactivate(String sessionToken, String menuItemId) {
+        changeActiveStatus(sessionToken, menuItemId, false);
     }
 
-    public void adjustStock(String actorId, String menuItemId, int quantityChange) {
+    public void adjustStock(String sessionToken, String menuItemId, int quantityChange) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_STOCK);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_STOCK);
             MenuItem item = state.getMenuItemOrThrow(menuItemId);
             item.adjustStock(quantityChange);
             state.addAuditLog(new AuditLog(
                     idGenerator.nextId(),
                     LocalDateTime.now(clock),
-                    actorId,
+                    AuthorizationService.employeeId(state, sessionToken),
                     "STOCK_ADJUSTED",
                     "Adjusted stock for " + item.getId() + " by " + quantityChange + "."));
             return null;
         });
     }
 
-    private void changeActiveStatus(String actorId, String menuItemId, boolean active) {
+    private void changeActiveStatus(String sessionToken, String menuItemId, boolean active) {
         repository.transact(state -> {
-            AuthorizationService.require(state, actorId, Permission.MANAGE_MENU);
+            AuthorizationService.require(state, sessionToken, Permission.MANAGE_MENU);
             MenuItem item = state.getMenuItemOrThrow(menuItemId);
             if (active) {
                 item.activate();

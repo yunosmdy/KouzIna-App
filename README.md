@@ -1,83 +1,108 @@
-# Kóuz 'Inà — Restaurant Management System
+# KÃ³uz 'InÃ  â€” Restaurant Management System
 
-## Signing in
+Java 21 desktop restaurant application with individual employee accounts and manager-approved roles.
 
-1. **Welcome to Kóuz 'Inà!** — choose **Employee** or **Manager**.
-2. Log in with the shared login for that side:
+## Run
 
-   | Portal   | Username   | Password      |
-   |----------|------------|---------------|
-   | Employee | `employee` | `employee123` |
-   | Manager  | `manager`  | `manager123`  |
+Open this exact project folder in VS Code (the folder containing `src`, `test`, and `.vscode`).
+Use **Run and Debug â†’ Run Kouzina**, or double-click **Run.bat**.
+Without VS Code: `powershell -ExecutionPolicy Bypass -File .\Run.ps1`.
+JDK 21 must be on PATH (`javac -version`). No external dependencies are required.
 
-3. **Would you like to log in as** — click your profile (like Netflix).
-   - Employee profiles: Jael Castillo, Lui Vence, Gian Liit, Vera Malinao
-   - Manager profiles: Jessie James, Jerald Anderson
-   - **Add profile** makes a new one. **Manage profiles** changes a photo or removes a profile.
+## Login and account creation
 
-The username is only the shared login. The name shown in the app (sidebar, greeting,
-audit log) is the profile you picked. Use **Switch profile** in the sidebar to change person.
+The login screen has two buttons: **Sign in** and **Create account**.
 
-The old individual logins still work for testing roles: `waiter`/`waiter123`,
-`chef`/`chef123`, `cashier`/`cashier123` (Employee portal).
+Preset accounts are ready for the classroom demo:
 
-## Moving around
+| Role | Default full name | Username | Password |
+|---|---|---|---|
+| Manager | Restaurant Manager | manager | manager123 |
+| Waiter | Restaurant Waiter | waiter | waiter123 |
+| Chef | Noning Ry | chef | chef12345 |
+| Cashier | Iruma | cashier | cashier123 |
 
-- The **sidebar** is always visible (shortcuts F1–F6).
-- Guests & Tables, Orders, Kitchen, and Billing have a **step bar** at the top:
-  `← Back to …`   1 Guests & Tables › 2 Orders › 3 Kitchen › 4 Billing   `Go to … →`
-  The selected order comes along, so the next screen opens on the same order.
+Existing saves retain their Manager/Waiter names. See PRESET_VALUES.md for the complete preset inventory.
 
-## Fixing mistakes (retry)
+For a personal account: **Create account → Account setup → Manager gives access**.
+Enter full name, username, password, and confirmation. The account stays Pending until a Manager
+opens **Manager Tools → Accounts**, selects it, assigns the job, and clicks **Approve**.
+New Managers use exactly the same form and approval process. The preset Manager provides initial access.
+There is no migration wizard, first-Manager setup, profile picker, or temporary-password screen.
 
-- **Billing → Create bill…** opens a pop-up with the ordered items and a live total.
-  A wrong service charge is shown in red and must be fixed before saving.
-- **Billing → Change bill…** corrects the discount or service charge of a bill that is not paid yet.
-- **Billing → Take payment…** shows the change while you type the cash received.
-  Too little cash, letters, or an unusually large amount are caught *before* anything is saved;
-  the pop-up stays open so the amount can be fixed and tried again.
-- **Orders → Add to order** on a dish that is already in the order asks whether to add more or change
-  the amount. Not enough stock? It offers what is left.
-- **Orders → Send to kitchen** shows the whole order first ("Go back and edit" / "Send to kitchen").
-- **Orders → Take back order** brings a sent order back to "Taking order" (stock is returned)
-  as long as the kitchen has not started cooking it.
-- Remove item and Mark served ask first.
+## Individual accounts
 
-## Scrolling
+The permanent employee ID links records. The unique username is used for login. The full name is
+used for greetings, staff lists, and audit history. Two people can share a full name.
 
-On small or zoomed-in screens every screen scrolls (scrollbars + mouse wheel). The mouse wheel
-works over tables too: when a table reaches its end, the page keeps scrolling.
+Usernames have 3â€“30 ASCII letters, digits, dots, underscores or hyphens, and begin with a letter or
+digit. Usernames are trimmed and case-insensitive; passwords retain their exact characters.
+Passwords have 8â€“128 characters and must match their confirmation. Saved credentials use salted
+PBKDF2 hashes. Password work runs in background workers so Swing remains responsive.
+
+Account states are Pending, Active, Rejected and Inactive. Only an approved Active account with
+personal credentials can work. Rejected, inactive and retired usernames remain reserved.
+
+Managers can approve/reject requests, change roles, and deactivate/reactivate approved accounts. A Manager cannot deactivate or demote their own account, and the final
+active Manager is protected. Role/status changes invalidate existing sessions. Logout revokes
+the session, closes dialogs and discards its screens. Each login builds screens for that role.
 
 ## Roles
 
-| Role    | Can do |
-|---------|--------|
-| Staff (employee profiles) | Guests & Tables, Orders, Kitchen, Billing |
-| Manager | Everything, plus Manager Tools (menu & stock, staff & profiles, reports, audit log) and cancelling orders already sent to the kitchen |
-| Waiter / Chef / Cashier (old individual logins) | Only their own screens |
+| Role | Access |
+|---|---|
+| Waiter | Customers, reservations, walk-ins, seating, draft/confirm orders, mark Ready orders Served |
+| Chef | Kitchen queue; Confirmed â†’ Preparing â†’ Ready |
+| Cashier | Bills and payments for eligible served orders |
+| Manager | All operations, menu/stock, reports, audit, accounts, confirmed-order cancellation |
 
-Waiters you can assign to tables: Jessie James, Kurt Pangan, Jerald Anderson,
-Lebron James, Reign Magtaca, Wally Waiter. Managers can add more in
-**Manager Tools → Staff & Profiles**.
+Sidebar items, dashboard cards, workflow links and F1â€“F6 shortcuts respect the role. Services
+independently require a valid session and permission. A predictable employee ID alone cannot
+authorize an operation. New waiter assignments use active individual Waiter accounts.
 
-## Photos
+## Saved data
 
-See `photos/README.txt` — profile photos, menu pictures, and `logo.png`.
+The app uses `data/kouzina.dat` in the project folder, including when run from `src` or `out`.
+Existing restaurant records are retained. Automatic format updates make an exact backup first;
+the simple-account update uses `kouzina.dat.before-simple-login.bak`.
 
-## Folder layout (each folder matches its Java package)
+Preset accounts are installed once. Restarting does not duplicate them or reset changed passwords,
+roles, or deactivations. Existing personal accounts keep their credentials; the known old Chef demo
+password is upgraded from `chef123` to `chef12345`. Old shared logins are retired. The old default
+Manager profile keeps its ID when converted into the preset Manager. Other historical profiles remain
+stored for old records but do not appear as account requests. Their owners use Create account.
+Any already-assigned temporary password is accepted as that account's password without an extra screen.
+Names are never used to merge identities. Unreadable saves and username collisions produce errors
+instead of resetting restaurant data.
 
-    src/        KouzinaApp.java + bootstrap, domain, domain/enums, exception,
-                persistence, security, service, ui, util
-    test/ui/    WorkflowChecks.java (automated checks)
-    data/       kouzina.dat save file (created on first run)
-    photos/     profile pictures, menu/ pictures, logo.png
-    .vscode/    VS Code settings and run configurations
+## Restaurant workflow
 
-## Running
+Waiter: register/seat guests â†’ draft and confirm order.
+Chef: start preparation â†’ mark Ready.
+Waiter: mark Served.
+Cashier: issue bill â†’ accept cash or simulated electronic payment.
+Successful payment closes the visit, completes its reservation when applicable, and releases the
+table. Existing stock, billing, retry and transaction rules are preserved.
 
-- **VS Code:** File → Open Folder → this `Kouzina` folder. Run and Debug → **Run Kouzina** → F5.
-  **Run checks (tests)** runs the automated checks.
-- **Without VS Code:** double-click `Run.bat` (app) or `Run tests.bat` (checks).
-- Needs **JDK 21** (`javac -version` should say 21).
+Use **Change bill** to correct an unpaid bill, or **Take back order** before preparation to fix
+an order. Manager cancellation rules continue to apply. Menu/stock, reports and audit remain in
+Manager Tools. Pictures remain in `photos/`; use a picture named after the person's full name.
 
-To start over with fresh sample data, close the app and delete `data/kouzina.dat`.
+## Verification
+
+Double-click **Run tests.bat**, use **Run checks (tests)** in VS Code, or run
+`powershell -ExecutionPolicy Bypass -File .\Run.ps1 -Test`.
+The launcher locates the legacy fixtures even when invoked from another working directory.
+
+The normal test run covers accounts, permissions, persistence, and restaurant workflows.
+For real Swing component checks, run `java -Djava.awt.headless=false -cp out ui.UiAccountSmoke`
+from the project folder after `Run.ps1 -Test`. Tests use isolated data.
+
+## Limits
+
+This is a local, single-process university prototype. Protect the computer and save-file access;
+it is not designed to resist a person editing Java code or replacing local files. Accounts have
+no email verification, network service, automatic password recovery, or online payment processing.
+Closing the application ends its in-memory sessions; an abrupt termination may omit a final logout
+audit event. Use the same data file in only one application process at a time.
+

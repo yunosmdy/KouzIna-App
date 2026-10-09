@@ -39,6 +39,40 @@ public final class AppState implements Serializable {
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
     private final int schemaVersion;
+    private int accountVersion = 2;
+    private String securityId = java.util.UUID.randomUUID().toString();
+    private boolean initialManagerSetupAllowed = true;
+    private String recoveryLoginId;
+    private boolean presetAccountsInstalled;
+    public boolean hasPresetAccounts() { return presetAccountsInstalled; }
+    public void completePresetAccounts() {
+        presetAccountsInstalled = true;
+        initialManagerSetupAllowed = false;
+        recoveryLoginId = null;
+    }
+
+    public int getAccountVersion() { return accountVersion; }
+    public String getSecurityId() { return securityId; }
+    public boolean isInitialManagerSetupAllowed() { return initialManagerSetupAllowed; }
+    public void completeInitialManagerSetup() { initialManagerSetupAllowed = false; }
+    public String getRecoveryLoginId() { return recoveryLoginId; }
+    public void finishAccountMigration(String recoveryId) {
+        accountVersion = 2; securityId = java.util.UUID.randomUUID().toString();
+        initialManagerSetupAllowed = false; recoveryLoginId = recoveryId;
+    }
+    public void completeManagerRecovery() { recoveryLoginId = null; }
+    public void replaceEmployee(Employee employee) {
+        getEmployeeOrThrow(employee.getId());
+        boolean duplicate = employees.values().stream().anyMatch(e -> !e.getId().equals(employee.getId())
+                && e.getUsername().equalsIgnoreCase(employee.getUsername()));
+        if (duplicate) throw new ConflictException("Username already exists.");
+        employees.put(employee.getId(), employee);
+    }
+    /** Permanently removes an account. Callers check that it is safe to remove first. */
+    public void removeEmployee(String id) {
+        getEmployeeOrThrow(id);
+        employees.remove(id);
+    }
     private final LinkedHashMap<String, Employee> employees;
     private final LinkedHashMap<String, Customer> customers;
     private final LinkedHashMap<String, RestaurantTable> tables;

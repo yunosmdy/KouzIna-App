@@ -6,11 +6,7 @@ import security.PasswordHasher;
 import java.io.Serial;
 import java.util.Set;
 
-/**
- * Shared login for the restaurant computer, e.g. username "employee" or "manager".
- * It cannot do any work by itself: after signing in, the user picks a profile
- * (like Netflix) and every action is recorded under that profile's name.
- */
+/** Retained only to deserialize and verify the retired Manager credential during one-time migration. */
 public final class SharedLogin extends Employee {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -23,16 +19,11 @@ public final class SharedLogin extends Employee {
         this.forManagers = forManagers;
     }
 
-    /** true = shows Manager profiles, false = shows Staff profiles. */
+    /** Identifies which retired shared credential was the Manager credential. */
     public boolean isForManagers() {
         return forManagers;
     }
 
-    /** Whether the given employee is one of the profiles this login can open. */
-    public boolean opens(Employee profile) {
-        return profile.isActive()
-                && (forManagers ? profile instanceof Manager : profile instanceof Staff);
-    }
 
     @Override
     protected Set<Permission> permissions() {

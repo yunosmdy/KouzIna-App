@@ -437,6 +437,43 @@ final class UiSupport {
         });
     }
 
+    /**
+     * Name fields: only letters and spaces can be typed or pasted. Anything else
+     * (numbers, symbols) is dropped with a short beep. The service checks the same rule again.
+     */
+    static void lettersOnly(JTextField field) {
+        field.setToolTipText("Letters and spaces only");
+        ((javax.swing.text.AbstractDocument) field.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass bypass, int offset, String text,
+                                     javax.swing.text.AttributeSet attributes) throws javax.swing.text.BadLocationException {
+                super.insertString(bypass, offset, keep(text), attributes);
+            }
+
+            @Override
+            public void replace(FilterBypass bypass, int offset, int length, String text,
+                                javax.swing.text.AttributeSet attributes) throws javax.swing.text.BadLocationException {
+                super.replace(bypass, offset, length, keep(text), attributes);
+            }
+
+            private String keep(String text) {
+                if (text == null) {
+                    return null;
+                }
+                StringBuilder kept = new StringBuilder(text.length());
+                for (char ch : text.toCharArray()) {
+                    if (util.Names.isAllowed(ch)) {
+                        kept.append(ch);
+                    }
+                }
+                if (kept.length() != text.length()) {
+                    javax.swing.UIManager.getLookAndFeel().provideErrorFeedback(field);
+                }
+                return kept.toString();
+            }
+        });
+    }
+
     static void placeholder(JTextField field, String text) {
         field.putClientProperty(Theme.PLACEHOLDER, text);
     }

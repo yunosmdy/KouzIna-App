@@ -42,6 +42,11 @@ public final class AccountChecks {
             invalid(() -> register(fresh,"Name",input),"Invalid username: "+input);
         invalid(() -> register(fresh," ","blank.name"),"Blank full name rejected");
         invalid(() -> register(fresh,"x".repeat(81),"long.name"),"Overlong name rejected");
+        invalid(() -> register(fresh,"Juan 2","digit.name"),"Full name with a number rejected");
+        invalid(() -> register(fresh,"Jael@Castillo","symbol.name"),"Full name with a symbol rejected");
+        invalid(() -> new domain.Customer("guest-x","Juan3","Cruz","0917-555-0101"),"Guest first name with a number rejected");
+        invalid(() -> new domain.Customer("guest-y","Juan","Dela-Cruz!","0917-555-0101"),"Guest last name with symbols rejected");
+        check(new domain.Customer("guest-z","José","Peña","0917-555-0101").getFullName().equals("José Peña"),"Accented letters allowed in guest names");
         invalid(() -> fresh.authentication().register("Name","mismatch",pw("password123"),pw("different123")),"Password confirmation required");
         invalid(() -> fresh.authentication().register("Name","shortpw",pw("short"),pw("short")),"Short password rejected");
         invalid(() -> fresh.authentication().register("Name","longpw",pw("x".repeat(129)),pw("x".repeat(129))),"Overlong password rejected");

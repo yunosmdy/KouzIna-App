@@ -21,6 +21,7 @@ import java.util.Objects;
 /**
  * Date field that opens a calendar when clicked. No typing needed.
  * Use getDate() / setDate(...); addChangeListener(...) runs when the user picks a day.
+ * Click the month name to jump: years grid -> months grid -> days.
  */
 public final class DatePicker extends JPanel {
     private static final DateTimeFormatter BUTTON_FORMAT = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy");
@@ -30,6 +31,12 @@ public final class DatePicker extends JPanel {
     private final List<Runnable> listeners = new ArrayList<>();
     private LocalDate date;
     private YearMonth shownMonth;
+    /** What the pop-up shows: the days of a month, the 12 months of a year, or a page of 12 years. */
+    private enum View { DAYS, MONTHS, YEARS }
+    private View view = View.DAYS;
+    private static final int YEARS_PER_PAGE = 12;
+    /** First year on the years page. */
+    private int firstShownYear;
 
     public DatePicker(LocalDate initial) {
         super(new BorderLayout());
@@ -66,6 +73,7 @@ public final class DatePicker extends JPanel {
 
     private void openCalendar() {
         shownMonth = YearMonth.from(date);
+        view = View.DAYS;
         JPopupMenu popup = new JPopupMenu();
         popup.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.LINE),
@@ -80,26 +88,121 @@ public final class DatePicker extends JPanel {
 
     private void fillCalendar(JPanel calendar, JPopupMenu popup) {
         calendar.removeAll();
+        if (view == View.YEARS) {
+            fillYears(calendar, popup);
+        } else if (view == View.MONTHS) {
+            fillMonths(calendar, popup);
+        } else {
+            fillDays(calendar, popup);
+        }
+        calendar.add(footer(popup), BorderLayout.SOUTH);
+        calendar.revalidate();
+        calendar.repaint();
+        popup.pack();
+    }
 
-        // Header: < October 2026 >
-        JPanel header = new JPanel(new BorderLayout());
+    /** Header: < [title] >. Clicking the title zooms out (days -> years, months -> years); null = plain title. */
+    private JPanel header(String title, Runnable onTitle, Runnable onPrevious, Runnable onNext,
+                          JPanel calendar, JPopupMenu popup) {
+        JPanel header = new JPanel(new BorderLayout(6, 0));
         header.setOpaque(false);
         JButton previous = navButton("‹");
         JButton next = navButton("›");
-        JLabel month = new JLabel(shownMonth.format(MONTH_FORMAT), SwingConstants.CENTER);
-        month.setFont(Theme.font(Font.BOLD, 15f));
+        javax.swing.JComponent titleButton;
+        if (onTitle == null) {
+            JLabel label = new JLabel(title, SwingConstants.CENTER);
+            label.setFont(Theme.font(Font.BOLD, 15f));
+            titleButton = label;
+        } else {
+            JButton button = Theme.subtle(new JButton(title + "  ▾"));
+            button.setFont(Theme.font(Font.BOLD, 15f));
+            button.setToolTipText("Choose the year");
+            button.addActionListener(event -> {
+                onTitle.run();
+                fillCalendar(calendar, popup);
+            });
+            titleButton = button;
+        }
         previous.addActionListener(event -> {
-            shownMonth = shownMonth.minusMonths(1);
+            onPrevious.run();
             fillCalendar(calendar, popup);
         });
         next.addActionListener(event -> {
-            shownMonth = shownMonth.plusMonths(1);
+            onNext.run();
             fillCalendar(calendar, popup);
         });
         header.add(previous, BorderLayout.WEST);
-        header.add(month, BorderLayout.CENTER);
+        header.add(titleButton, BorderLayout.CENTER);
         header.add(next, BorderLayout.EAST);
-        calendar.add(header, BorderLayout.NORTH);
+        return header;
+    }
+
+    /** Page of 12 years, e.g. 2016-2027. Picking one shows that year's months. */
+    private void fillYears(JPanel calendar, JPopupMenu popup) {
+        int last = firstShownYear + YEARS_PER_PAGE - 1;
+        calendar.add(header(firstShownYear + " – " + last, null,
+                () -> firstShownYear -= YEARS_PER_PAGE, () -> firstShownYear += YEARS_PER_PAGE,
+                calendar, popup), BorderLayout.NORTH);
+        JPanel grid = new JPanel(new GridLayout(0, 3, 6, 6));
+        grid.setOpaque(false);
+        for (int year = firstShownYear; year <= last; year++) {
+            int value = year;
+            JButton button = pickButton(String.valueOf(year), year == shownMonth.getYear(),
+                    year == LocalDate.now().getYear());
+            button.addActionListener(event -> {
+                shownMonth = YearMonth.of(value, shownMonth.getMonthValue());
+                view = View.MONTHS;
+                fillCalendar(calendar, popup);
+            });
+            grid.add(button);
+        }
+        calendar.add(grid, BorderLayout.CENTER);
+    }
+
+    /** The 12 months of the shown year. Picking one shows its days. */
+    private void fillMonths(JPanel calendar, JPopupMenu popup) {
+        calendar.add(header(String.valueOf(shownMonth.getYear()), this::showYearsPage,
+                () -> shownMonth = shownMonth.minusYears(1), () -> shownMonth = shownMonth.plusYears(1),
+                calendar, popup), BorderLayout.NORTH);
+        JPanel grid = new JPanel(new GridLayout(0, 3, 6, 6));
+        grid.setOpaque(false);
+        YearMonth thisMonth = YearMonth.now();
+        for (int month = 1; month <= 12; month++) {
+            YearMonth value = YearMonth.of(shownMonth.getYear(), month);
+            JButton button = pickButton(value.format(DateTimeFormatter.ofPattern("MMM")),
+                    value.equals(YearMonth.from(date)), value.equals(thisMonth));
+            button.addActionListener(event -> {
+                shownMonth = value;
+                view = View.DAYS;
+                fillCalendar(calendar, popup);
+            });
+            grid.add(button);
+        }
+        calendar.add(grid, BorderLayout.CENTER);
+    }
+
+    /** Opens the page of years that contains the shown year. */
+    private void showYearsPage() {
+        int year = shownMonth.getYear();
+        firstShownYear = year - Math.floorMod(year, YEARS_PER_PAGE);
+        view = View.YEARS;
+    }
+
+    private static JButton pickButton(String text, boolean selected, boolean current) {
+        JButton button = new JButton(text);
+        Theme.chip(button, selected);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+        button.setPreferredSize(new Dimension(84, 38));
+        button.setFont(Theme.font(selected ? Font.BOLD : Font.PLAIN, 13.5f));
+        button.putClientProperty(Theme.OUTLINE, current && !selected ? Theme.ORANGE : null);
+        return button;
+    }
+
+    private void fillDays(JPanel calendar, JPopupMenu popup) {
+        // Header: < October 2026 ▾ >   (click the month name to pick another year)
+        calendar.add(header(shownMonth.format(MONTH_FORMAT), this::showYearsPage,
+                () -> shownMonth = shownMonth.minusMonths(1), () -> shownMonth = shownMonth.plusMonths(1),
+                calendar, popup), BorderLayout.NORTH);
 
         // Day grid
         JPanel grid = new JPanel(new GridLayout(0, 7, 4, 4));
@@ -136,21 +239,19 @@ public final class DatePicker extends JPanel {
             grid.add(button);
         }
         calendar.add(grid, BorderLayout.CENTER);
+    }
 
+    private JPanel footer(JPopupMenu popup) {
         JButton todayButton = Theme.subtle(new JButton("Today"));
         todayButton.addActionListener(event -> {
-            setDate(today);
+            setDate(LocalDate.now());
             popup.setVisible(false);
             listeners.forEach(Runnable::run);
         });
         JPanel footer = new JPanel(new BorderLayout());
         footer.setOpaque(false);
         footer.add(todayButton, BorderLayout.EAST);
-        calendar.add(footer, BorderLayout.SOUTH);
-
-        calendar.revalidate();
-        calendar.repaint();
-        popup.pack();
+        return footer;
     }
 
     private static JButton navButton(String text) {

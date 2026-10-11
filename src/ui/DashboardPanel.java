@@ -48,13 +48,6 @@ public final class DashboardPanel extends JPanel implements Refreshable {
             KouzinaFrame.BILLING, "Create the bill, take cash or e-payment, free the table.",
             KouzinaFrame.MANAGER, "Menu and stock, reports, accounts, audit log.");
 
-    /** Step numbers shown on the four workflow cards. */
-    private static final Map<String, String> STEPS = Map.of(
-            KouzinaFrame.RESERVATIONS, "STEP 1",
-            KouzinaFrame.ORDERING, "STEP 2",
-            KouzinaFrame.KITCHEN, "STEP 3",
-            KouzinaFrame.BILLING, "STEP 4");
-
     /** One number tile: label, which roles see it, and how to count it. */
     private record Stat(String label, String hint, List<String> roles, Theme.Tone tone,
                         ToLongFunction<AppState> counter) {
@@ -121,7 +114,7 @@ public final class DashboardPanel extends JPanel implements Refreshable {
         body.add(statRow, BorderLayout.NORTH);
         JPanel gridHolder = new JPanel(new BorderLayout(0, 10));
         gridHolder.setOpaque(false);
-        JLabel sectionsTitle = new JLabel("Where to?  A guest's visit goes Step 1 → 4.");
+        JLabel sectionsTitle = new JLabel("Where to?");
         sectionsTitle.setFont(Theme.font(Font.BOLD, 16f));
         gridHolder.add(sectionsTitle, BorderLayout.NORTH);
         gridHolder.add(grid, BorderLayout.CENTER);
@@ -245,10 +238,10 @@ public final class DashboardPanel extends JPanel implements Refreshable {
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.add(picture, BorderLayout.WEST);
-        String step = STEPS.get(section.key());
-        JLabel key = new JLabel(step == null ? section.shortcut() : step + "  ·  " + section.shortcut());
+        // Only the keyboard shortcut (F1–F6) in the corner of each card
+        JLabel key = new JLabel(section.shortcut());
         key.setFont(Theme.font(Font.BOLD, 11.5f));
-        key.setForeground(step == null ? Theme.MUTED : Theme.ORANGE_DARK);
+        key.setForeground(Theme.MUTED);
         key.setVerticalAlignment(JLabel.TOP);
         top.add(key, BorderLayout.EAST);
         card.add(top, BorderLayout.NORTH);

@@ -61,6 +61,10 @@ public final class ApplicationServices {
             }
             repository.transact(state -> { PresetAccounts.install(state,hasher); return null; });
         }
+        // Add the classic Filipino dishes once (existing menus keep their items; nothing is duplicated)
+        if (FilipinoMenu.anyMissing(repository.snapshot())) {
+            repository.transact(state -> { FilipinoMenu.addMissing(state); return null; });
+        }
         return new ApplicationServices(
                 repository, hasher, new UuidIdGenerator(), Clock.systemDefaultZone());
     }

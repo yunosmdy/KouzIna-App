@@ -19,8 +19,8 @@ public final class LoginPanel extends BrandSplitPanel {
     }
     @Override protected JComponent content() {
         JPanel form=new JPanel();form.setOpaque(false);form.setLayout(new BoxLayout(form,BoxLayout.Y_AXIS));
-        JLabel title=new JLabel(Theme.BRAND+" Login");title.setFont(Theme.font(Font.BOLD,30));form.add(leftAligned(title));
-        form.add(Box.createVerticalStrut(12));message=new JLabel();form.add(leftAligned(message));form.add(Box.createVerticalStrut(20));
+        JLabel title=new JLabel("LOGIN");title.setFont(heavyFont(46f));title.setForeground(Color.BLACK);form.add(leftAligned(title));
+        message=new JLabel();message.setFont(Theme.font(Font.PLAIN,13f));form.add(leftAligned(message));form.add(Box.createVerticalStrut(26));
         username=new JTextField(22);password=new JPasswordField(22);
         form.add(leftAligned(new JLabel("Username")));form.add(leftAligned(username));form.add(Box.createVerticalStrut(12));
         form.add(leftAligned(new JLabel("Password")));form.add(leftAligned(password));form.add(Box.createVerticalStrut(18));
@@ -29,6 +29,13 @@ public final class LoginPanel extends BrandSplitPanel {
         login.addActionListener(e -> login());password.addActionListener(e -> login());username.addActionListener(e -> password.requestFocusInWindow());
         register.addActionListener(e -> AccountDialogs.register(this,services));
         return form;
+    }
+    /** Extra-bold font for the LOGIN title: Segoe UI Black on Windows, else Arial Black, else bold. */
+    private static Font heavyFont(float size) {
+        java.util.Set<String> installed=java.util.Set.of(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        for(String family:new String[]{"Segoe UI Black","Arial Black","Inter Black"})
+            if(installed.contains(family)) return new Font(family,Font.PLAIN,Math.round(size));
+        return Theme.font(Font.BOLD,size);
     }
     public void refreshMode() {
         message.setText("Sign in, or create an account for Manager approval.");

@@ -14,11 +14,10 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
-import java.awt.geom.Path2D;
 
 /**
- * Shared layout for the welcome and login screens:
- * orange curved panel on the left (with the logo space), content on the right.
+ * Layout for the login screen: a solid orange half on the left (logo, name, tagline),
+ * a green stripe down the middle, and white on the right for the form.
  */
 abstract class BrandSplitPanel extends JPanel {
 
@@ -31,10 +30,13 @@ abstract class BrandSplitPanel extends JPanel {
         GridBagConstraints center = new GridBagConstraints();
         center.anchor = GridBagConstraints.WEST;
         center.weightx = 1;
-        center.insets = new Insets(0, 70, 0, 40);
+        center.insets = new Insets(0, STRIPE + 50, 0, 40);
         right.add(content(), center);
         add(right);
     }
+
+    /** Width of the green stripe between the orange and white halves. */
+    static final int STRIPE = 55;
 
     /** The right-hand side of the screen. */
     protected abstract JComponent content();
@@ -59,9 +61,7 @@ abstract class BrandSplitPanel extends JPanel {
         tagline.setForeground(Theme.TEXT);
         tagline.setAlignmentX(Component.CENTER_ALIGNMENT);
         stack.add(tagline);
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(0, 0, 0, 60);
-        left.add(stack, c);
+        left.add(stack, new GridBagConstraints());
         return left;
     }
 
@@ -77,15 +77,11 @@ abstract class BrandSplitPanel extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         int w = getWidth();
         int h = getHeight();
-        Path2D shape = new Path2D.Float();
-        shape.moveTo(0, 0);
-        shape.lineTo(w * 0.48, 0);
-        shape.curveTo(w * 0.535, h * 0.30, w * 0.535, h * 0.72, w * 0.50, h * 0.90);
-        shape.quadTo(w * 0.485, h, w * 0.45, h);
-        shape.lineTo(0, h);
-        shape.closePath();
+        int half = w / 2;
         g2.setColor(Theme.ORANGE);
-        g2.fill(shape);
+        g2.fillRect(0, 0, half, h);
+        g2.setColor(Theme.GREEN);
+        g2.fillRect(half, 0, STRIPE, h);
         g2.dispose();
     }
 }

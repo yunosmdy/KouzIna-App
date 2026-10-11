@@ -153,8 +153,16 @@ public final class ManagerPanel extends JPanel implements Refreshable {
         state.getMenuItems().stream().sorted(Comparator.comparing(MenuItem::getName))
                 .forEach(item -> menuModel.addRow(new Object[]{
                         new Choice(item.getId(), item.getName()), item.getCategoryName(), item.getUnitPrice(),
-                        item.getStockQuantity(), item.isActive() ? "Yes" : "No"}));
+                        item.getStockQuantity(), availability(item)}));
         UiSupport.restoreSelection(menuTable, selected);
+    }
+
+    /** Yes = can be ordered. Sold out = on the menu but 0 stock. Hidden = taken off the menu. */
+    private static String availability(MenuItem item) {
+        if (!item.isActive()) {
+            return "Hidden";
+        }
+        return item.isAvailable() ? "Yes" : "Sold out";
     }
 
     // ---------- Reports ----------
@@ -217,7 +225,7 @@ public final class ManagerPanel extends JPanel implements Refreshable {
         StringBuilder text = new StringBuilder("Remaining stock\n\n");
         for (StockReportRow row : services.reports().remainingStock(sessionToken())) {
             text.append(String.format("%-22s %-10s %5d   %s%n", row.getName(), row.getCategory(),
-                    row.getStockQuantity(), row.isActive() ? "on menu" : "hidden"));
+                    row.getStockQuantity(), !row.isActive() ? "hidden" : row.getStockQuantity() > 0 ? "on menu" : "sold out"));
         }
         report.setText(text.toString());
     }
@@ -228,13 +236,18 @@ public final class ManagerPanel extends JPanel implements Refreshable {
         JTable table = new JTable(auditModel);
         JComponent pane = UiSupport.tablePane(table);
         UiSupport.columnWidths(table, 170, 150, 170, 420);
-        return UiSupport.card("Who did what  ·  newest at the bottom", pane);
+        return UiSupport.card("Who did what  ·  newest at the top", pane);
     }
 
     private void refreshAudit() {
         AppState state = services.repository().snapshot();
         auditModel.setRowCount(0);
-        for (AuditLog log : services.audit().getAuditLog(sessionToken())) {
+        // Newest first, so the latest actions are at the top of the table
+        // (reverse first, so actions saved in the same second also stay newest-first)
+        List<AuditLog> logs = new java.util.ArrayList<>(services.audit().getAuditLog(sessionToken()));
+        java.util.Collections.reverse(logs);
+        logs.sort(Comparator.comparing(AuditLog::getTimestamp).reversed());
+        for (AuditLog log : logs) {
             String who = state.getEmployees().stream().filter(e -> e.getId().equals(log.getEmployeeId()))
                     .map(e -> e.getName()).findFirst().orElse("(deleted account)");
             auditModel.addRow(new Object[]{log.getTimestamp(), who,

@@ -16,12 +16,13 @@ final class AccountDialogs {
         JPasswordField password=new JPasswordField(22),confirm=new JPasswordField(22);
         String[] labels={"Full name","Username","Password","Confirm password"};
         JComponent[] inputs={name,username,password,confirm};
+        UiSupport.lettersOnly(name);
         for(int row=0;row<labels.length;row++) {
             GridBagConstraints c=new GridBagConstraints();c.gridy=row;c.gridx=0;c.anchor=GridBagConstraints.WEST;c.insets=new Insets(6,0,6,12);
             fields.add(new JLabel(labels[row]),c);c.gridx=1;c.weightx=1;c.fill=GridBagConstraints.HORIZONTAL;fields.add(inputs[row],c);
         }
         body.add(fields,BorderLayout.CENTER);
-        JLabel note=new JLabel("<html>Choose a password with at least 8 characters.<br>Your Manager will approve your account and assign your job.</html>");
+        JLabel note=new JLabel("<html>Full name: letters and spaces only.<br>Choose a password with at least 8 characters.<br>Your Manager will approve your account and assign your job.</html>");
         body.add(note,BorderLayout.NORTH);
         JPanel buttons=new JPanel(new FlowLayout(FlowLayout.RIGHT));JButton cancel=new JButton("Cancel"),submit=new JButton("Create account");
         buttons.add(cancel);buttons.add(submit);body.add(buttons,BorderLayout.SOUTH);

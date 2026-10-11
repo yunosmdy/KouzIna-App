@@ -18,6 +18,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.JTable;
 import javax.swing.Scrollable;
 import javax.swing.table.DefaultTableModel;
@@ -76,6 +78,8 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
 
     private final JPanel chipRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
     private final JPanel cardGrid = new JPanel(new GridLayout(0, 4, CARD_GAP, CARD_GAP));
+    /** Search box above the menu: filters the dish cards by name while typing. */
+    private final JTextField search = new JTextField(14);
     private final List<MenuItem> menuItems = new ArrayList<>();
     private String selectedCategory = ALL;
     private String selectedMenuId;
@@ -160,7 +164,13 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
         section.setOpaque(false);
         section.setMinimumSize(new Dimension(CARD_WIDTH + 40, 200));
         chipRow.setOpaque(false);
-        section.add(chipRow, BorderLayout.NORTH);
+        // Top row: category chips on the left, search box on the right
+        JPanel header = new JPanel(new BorderLayout(10, 0));
+        header.setOpaque(false);
+        header.add(chipRow, BorderLayout.CENTER);
+        header.add(searchBox(), BorderLayout.EAST);
+        header.add(UiSupport.muted("Click a dish to select it, double-click to add it."), BorderLayout.SOUTH);
+        section.add(header, BorderLayout.NORTH);
 
         cardGrid.setOpaque(false);
         JPanel gridHolder = new WidthTrackingPanel();
@@ -175,6 +185,27 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         section.add(scroll, BorderLayout.CENTER);
         return section;
+    }
+
+    /** Magnifier icon + text field. Every keystroke re-filters the cards; Esc clears the search. */
+    private JComponent searchBox() {
+        UiSupport.placeholder(search, "Search dishes...");
+        search.setToolTipText("Type part of a dish name, e.g. \"adobo\" or \"pancit\". Esc clears.");
+        search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { rebuildCards(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { rebuildCards(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { rebuildCards(); }
+        });
+        search.getInputMap().put(KeyStroke.getKeyStroke("ESCAPE"), "clearSearch");
+        search.getActionMap().put("clearSearch", new javax.swing.AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) { search.setText(""); }
+        });
+        JPanel box = new JPanel(new BorderLayout(6, 0));
+        box.setOpaque(false);
+        box.add(new JLabel(Icons.icon("search", 18, Theme.MUTED)), BorderLayout.WEST);
+        box.add(search, BorderLayout.CENTER);
+        box.setPreferredSize(new Dimension(240, search.getPreferredSize().height));
+        return box;
     }
 
     /** Holds the card grid; fits its width to the scroll pane and picks how many columns fit. */
@@ -218,18 +249,26 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
             });
             chipRow.add(chip);
         }
-        JLabel tip = UiSupport.muted("   Click a dish to select it, double-click to add it.");
-        chipRow.add(tip);
         chipRow.revalidate();
         chipRow.repaint();
     }
 
     private void rebuildCards() {
         cardGrid.removeAll();
+        String query = search.getText().trim().toLowerCase(java.util.Locale.ROOT);
+        int shown = 0;
         for (MenuItem item : menuItems) {
-            if (selectedCategory.equals(ALL) || item.getCategoryName().equals(selectedCategory)) {
+            boolean inCategory = selectedCategory.equals(ALL) || item.getCategoryName().equals(selectedCategory);
+            boolean matches = query.isEmpty() || item.getName().toLowerCase(java.util.Locale.ROOT).contains(query);
+            if (inCategory && matches) {
                 cardGrid.add(new MenuCard(item));
+                shown++;
             }
+        }
+        if (shown == 0 && !query.isEmpty()) {
+            JLabel none = UiSupport.muted("<html>No dishes match \"" + search.getText().trim().replace("&", "&amp;").replace("<", "&lt;")
+                    + "\". Check the spelling or press Esc to clear.</html>");
+            cardGrid.add(none);
         }
         cardGrid.revalidate();
         cardGrid.repaint();

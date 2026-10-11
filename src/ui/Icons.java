@@ -184,6 +184,10 @@ public final class Icons {
                 check.moveTo(5, 12.5f); check.lineTo(10, 17.5f); check.lineTo(19, 7);
                 g.draw(check);
             }
+            case "search" -> {
+                g.draw(new Ellipse2D.Float(4, 4, 12, 12));
+                g.draw(new Line2D.Float(14.5f, 14.5f, 20, 20));
+            }
             default -> g.draw(new Ellipse2D.Float(4, 4, 16, 16));
         }
         g.dispose();

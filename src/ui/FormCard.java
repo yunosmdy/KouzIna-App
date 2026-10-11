@@ -93,16 +93,10 @@ public final class FormCard extends RoundedPanel {
 
     /** Puts the card at the top of a fixed-width column so it does not stretch. */
     public JComponent inColumn() {
-        // The column is as tall as the form, so when the window is shorter the scroll bar appears
-        // and the bottom buttons (like Adjust stock) can still be reached.
-        JPanel column = new JPanel(new java.awt.BorderLayout()) {
-            @Override
-            public Dimension getPreferredSize() {
-                return new Dimension(WIDTH, FormCard.this.getPreferredSize().height);
-            }
-        };
+        JPanel column = new JPanel(new java.awt.BorderLayout());
         column.setOpaque(false);
         column.add(this, java.awt.BorderLayout.NORTH);
+        column.setPreferredSize(new Dimension(WIDTH, 10));
         javax.swing.JScrollPane scroll = new javax.swing.JScrollPane(column);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.setOpaque(false);

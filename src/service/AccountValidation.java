@@ -9,9 +9,10 @@ final class AccountValidation {
             throw new ValidationException("Username: 3–30 characters, letters, numbers, dot, underscore or hyphen; start with a letter or number.");
         return value;
     }
-    /** Letters and spaces only, 1–80 characters (same rule as guest names, see util.Names). */
     static String name(String input) {
-        return util.Names.require(input, "Full name", 80);
+        String value = input == null ? "" : input.trim().replaceAll("\\s+", " ");
+        if (value.isBlank() || value.length() > 80) throw new ValidationException("Enter a full name of 1–80 characters.");
+        return value;
     }
     static void passwords(char[] password, char[] confirmation) {
         if (password == null || password.length < 8 || password.length > 128)

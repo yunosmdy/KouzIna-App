@@ -40,9 +40,8 @@ public final class Customer implements Serializable {
 
     public void updateContact(String firstName, String lastName, String phoneNumber) {
         // check muna lahat para pag may blank, walang half-done na update
-        // Names: letters and spaces only (no numbers or symbols), see util.Names
-        String newFirstName = util.Names.require(firstName, "First name", 50);
-        String newLastName = util.Names.require(lastName, "Last name", 50);
+        String newFirstName = requireNonBlank(firstName, "First name");
+        String newLastName = requireNonBlank(lastName, "Last name");
         String newPhoneNumber = requireNonBlank(phoneNumber, "Phone number");
         this.firstName = newFirstName;
         this.lastName = newLastName;

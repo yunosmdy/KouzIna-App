@@ -242,7 +242,7 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
         MenuCard(MenuItem item) {
             super(new BorderLayout(0, 8), Theme.WHITE, 20);
             padding(12, 12, 12, 12);
-            setPreferredSize(new Dimension(CARD_WIDTH, 232));
+            setPreferredSize(new Dimension(CARD_WIDTH, 214));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             itemId = item.getId();
             if (item.getId().equals(selectedMenuId)) {
@@ -269,16 +269,12 @@ public final class OrderingPanel extends JPanel implements Refreshable, OrderFoc
             text.add(category);
             add(textHolder, BorderLayout.CENTER);
 
-            // Price on one line, stock badge under it. Side by side, they overlap on narrow cards.
-            JPanel bottom = new JPanel(new BorderLayout(0, 4));
+            JPanel bottom = new JPanel(new BorderLayout(6, 0));
             bottom.setOpaque(false);
             JLabel price = new JLabel(UiSupport.peso(item.getUnitPrice()));
             price.setFont(Theme.font(Font.BOLD, 15f));
-            bottom.add(price, BorderLayout.NORTH);
-            JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            badgeRow.setOpaque(false);
-            badgeRow.add(stockPill(item));
-            bottom.add(badgeRow, BorderLayout.SOUTH);
+            bottom.add(price, BorderLayout.WEST);
+            bottom.add(stockPill(item), BorderLayout.EAST);
             add(bottom, BorderLayout.SOUTH);
 
             addMouseListener(new MouseAdapter() {

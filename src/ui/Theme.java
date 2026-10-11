@@ -183,7 +183,7 @@ public final class Theme {
             case "AVAILABLE", "CONFIRMED", "CHECKED_IN", "COMPLETED", "SEATED", "READY",
                  "SERVED", "PAID", "OPEN", "ACTIVE", "TRUE", "IN_STOCK", "YES" -> Tone.GOOD;
             case "CANCELLED", "NO_SHOW", "VOIDED", "UNPAID", "OCCUPIED", "INACTIVE",
-                 "FALSE", "SOLD_OUT", "NO", "HIDDEN", "UNAVAILABLE" -> Tone.BAD;
+                 "FALSE", "SOLD_OUT", "NO" -> Tone.BAD;
             case "PENDING", "DRAFT", "PREPARING", "WAITING", "LOW_STOCK", "TAKING_ORDER",
                  "SENT_TO_KITCHEN", "RESERVED" -> Tone.WAIT;
             default -> Tone.DONE;

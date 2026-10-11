@@ -273,14 +273,12 @@ public final class ReservationsPanel extends JPanel implements Refreshable {
         UiSupport.formatOnLeave(firstName, UiSupport::formatName);
         UiSupport.formatOnLeave(lastName, UiSupport::formatName);
         UiSupport.formatOnLeave(phone, UiSupport::formatPhone);
-        UiSupport.lettersOnly(firstName);
-        UiSupport.lettersOnly(lastName);
         form.field("First name", firstName);
         form.field("Last name", lastName);
         form.field("Phone", phone);
         JButton register = new JButton("Register guest");
         form.buttons(register);
-        form.note("Names take letters and spaces only. They get capital letters and phone numbers get dashes automatically."
+        form.note("Names get capital letters and phone numbers get dashes automatically."
                 + " Saved guests can be picked by name when seating or booking.");
         register.addActionListener(e -> UiSupport.perform(this, () -> {
             String id = services.customers().createCustomer(actor(), UiSupport.formatName(firstName.getText()),
@@ -329,8 +327,6 @@ public final class ReservationsPanel extends JPanel implements Refreshable {
         JTextField number = new JTextField(18);
         UiSupport.formatOnLeave(first, UiSupport::formatName);
         UiSupport.formatOnLeave(last, UiSupport::formatName);
-        UiSupport.lettersOnly(first);
-        UiSupport.lettersOnly(last);
         UiSupport.formatOnLeave(number, UiSupport::formatPhone);
         JPanel form = new JPanel(new GridBagLayout());
         String[] labels = {"First name", "Last name", "Phone"};

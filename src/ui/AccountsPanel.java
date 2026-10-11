@@ -8,11 +8,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.function.Supplier;
 
-/**
- * Manager-only approval and account administration.
- * Same layout as Menu & Stock: the actions on the left (they scroll on short windows),
- * the accounts table on the right using the full height.
- */
+/** Manager-only approval and account administration. */
 final class AccountsPanel extends JPanel implements Refreshable {
     private final ApplicationServices services;
     private final Supplier<AuthenticatedUser> user;
@@ -21,39 +17,30 @@ final class AccountsPanel extends JPanel implements Refreshable {
     private final JComboBox<Role> role=new JComboBox<>(Role.values());
     private List<AccountRow> rows=List.of();
     AccountsPanel(ApplicationServices services,Supplier<AuthenticatedUser> user) {
-        super(new BorderLayout(14,0));this.services=services;this.user=user;setOpaque(false);
-
-        FormCard form=new FormCard("Selected account");
-        form.note("Select an account in the table, choose its job, then approve it. New Managers follow the same process.");
-        form.field("Job",role);
-        JButton approve=new JButton("Approve");
-        approve.addActionListener(e -> run("Approve",() -> services.staff().approve(token(),selected().id(),(Role)role.getSelectedItem())));
-        form.buttons(approve,button("Reject",() -> services.staff().reject(token(),selected().id())));
-        form.section("Approved accounts");
-        form.buttons(button("Change role",() -> services.staff().changeRole(token(),selected().id(),(Role)role.getSelectedItem())));
-        form.buttons(button("Deactivate",() -> services.staff().setActive(token(),selected().id(),false)),
-                button("Reactivate",() -> services.staff().setActive(token(),selected().id(),true)));
-        form.note("Deactivate blocks sign-in but keeps the account. Delete removes it for good.");
-        JButton delete=Theme.outline(new JButton("Delete account"));delete.setForeground(Theme.BAD_TEXT);
+        super(new BorderLayout(0,12));this.services=services;this.user=user;setOpaque(false);
+        JPanel controls=new JPanel(new GridLayout(0,3,8,8));controls.setOpaque(false);
+        controls.add(new JLabel("Assign role:"));controls.add(role);
+        button(controls,"Approve",() -> services.staff().approve(token(),selected().id(),(Role)role.getSelectedItem()));
+        button(controls,"Reject",() -> services.staff().reject(token(),selected().id()));
+        button(controls,"Change role",() -> services.staff().changeRole(token(),selected().id(),(Role)role.getSelectedItem()));
+        button(controls,"Deactivate",() -> services.staff().setActive(token(),selected().id(),false));
+        button(controls,"Reactivate",() -> services.staff().setActive(token(),selected().id(),true));
+        JButton delete=Theme.outline(new JButton("Delete account"));delete.setForeground(Theme.BAD_TEXT);controls.add(delete);
         delete.addActionListener(e -> deleteSelected());
-        form.buttons(delete);
-
-        UiSupport.columnWidths(table,190,140,110,110);
-        add(form.inColumn(),BorderLayout.WEST);
-        add(UiSupport.card("Accounts",UiSupport.tablePane(table)),BorderLayout.CENTER);
+        JPanel top=new JPanel(new BorderLayout());top.setOpaque(false);top.add(controls,BorderLayout.CENTER);
+        JTextArea explanation = new JTextArea("Select an account, choose its job, and approve access. New Managers follow the same process. Deactivate blocks sign-in but keeps the account; Delete removes it for good.");
+        explanation.setLineWrap(true); explanation.setWrapStyleWord(true); explanation.setEditable(false); explanation.setOpaque(false);
+        top.add(explanation,BorderLayout.SOUTH);
+        add(top,BorderLayout.NORTH);add(UiSupport.tablePane(table),BorderLayout.CENTER);
     }
     private String token() { return user.get().sessionToken(); }
     private AccountRow selected() {
         String id=UiSupport.selectedId(table,0,"account");
         return rows.stream().filter(r -> r.id().equals(id)).findFirst().orElseThrow();
     }
-    private JButton button(String text,Runnable action) {
-        JButton button=Theme.outline(new JButton(text));
-        button.addActionListener(e -> run(text,action));
-        return button;
-    }
-    private void run(String text,Runnable action) {
-        if(UiSupport.confirm(this,text+" for the selected account?")) UiSupport.perform(this,action,this::refreshData);
+    private void button(JPanel parent,String text,Runnable action) {
+        JButton button=Theme.outline(new JButton(text));parent.add(button);
+        button.addActionListener(e -> { if(UiSupport.confirm(this,text+" for the selected account?")) UiSupport.perform(this,action,this::refreshData); });
     }
     private void deleteSelected() {
         AccountRow row;

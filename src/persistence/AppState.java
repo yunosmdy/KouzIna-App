@@ -261,6 +261,12 @@ public final class AppState implements Serializable {
         add(tables, requiredTable.getId(), requiredTable, "Table");
     }
 
+    /** Removes a menu item. Only for items no order has ever used (see FilipinoMenu). */
+    public void removeMenuItem(String id) {
+        getMenuItemOrThrow(id);
+        menuItems.remove(id);
+    }
+
     public void addMenuItem(MenuItem menuItem) {
         add(menuItems, requireEntity(menuItem, "Menu item").getId(), menuItem, "Menu item");
     }

@@ -2,20 +2,17 @@
 # Dish | File | Author | License | Source page
 Adobo | Adobo DSCF4391.jpg | Joy D. Ganaden | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Adobo_DSCF4391.jpg
 Bacolod Chicken | Olympus EP3 - Mang Inasal Roasted Chicken (14456257212).jpg | michael reyes from Philippines | CC BY-SA 2.0 | https://commons.wikimedia.org/wiki/File:Olympus_EP3_-_Mang_Inasal_Roasted_Chicken_(14456257212).jpg
-Balut | The Balut.jpg | JBYBIOSA | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:The_Balut.jpg
 Bangus | Daing na bangus.jpg | bingbing on flickr | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Daing_na_bangus.jpg
 Beef Mechado | Cooked mechado.JPG | BrokenSphere | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:Cooked_mechado.JPG
 Bibingka | Bibingka (Philippines).jpg | Obsidian Soul | CC0 | https://commons.wikimedia.org/wiki/File:Bibingka_(Philippines).jpg
 Buko Pie | Buko-pie.jpg | Martin Sordilla | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Buko-pie.jpg
 Bulalo | BULALO.jpg | LReformado | CC BY 4.0 | https://commons.wikimedia.org/wiki/File:BULALO.jpg
 Chami | Pansit Chami.jpg | Aerous | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Pansit_Chami.jpg
-Chicharon | Chicharon.jpg | Buszmail | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Chicharon.jpg
 Chicken Sotanghon | Chicken sotanghon soup.jpg | digipam | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Chicken_sotanghon_soup.jpg
 Crispy Pata | Crispy Pata Pork.jpg | Cyapoj | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Crispy_Pata_Pork.jpg
 Fresh Lumpia | Lumpiang sariwa (Philippines).jpg | Obsidian Soul | CC0 | https://commons.wikimedia.org/wiki/File:Lumpiang_sariwa_(Philippines).jpg
 Ginataang Papaya | Ginataang Papaya.jpg | MarvinBikolano | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Ginataang_Papaya.jpg
 Ilocos Empanada | Ilocos Empanada in Batac, Ilocos Norte.jpg | Lokalpedia | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Ilocos_Empanada_in_Batac,_Ilocos_Norte.jpg
-Isaw | Isaw in Apalit 14.jpg | RamaGaspar | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Isaw_in_Apalit_14.jpg
 Kaldereta | Home cooked Kaldereta.jpg | dbgg1979 | CC BY 2.0 | https://commons.wikimedia.org/wiki/File:Home_cooked_Kaldereta.jpg
 Kare Kare | Kare-kare (Philippines) 03.jpg | Obsidian Soul | CC0 | https://commons.wikimedia.org/wiki/File:Kare-kare_(Philippines)_03.jpg
 Kilawin na Tanigue | Kinilaw of Northern Mindanao.jpg | Lokalpedia | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Kinilaw_of_Northern_Mindanao.jpg
@@ -27,4 +24,3 @@ Paksiyo Baboy Bisaya | Paksiw na pata.jpg | unknown | CC BY-SA 4.0 | https://com
 Pancit Bihon Guisado | Pancit Bihon Guisado.jpg | Aerous | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Pancit_Bihon_Guisado.jpg
 Sinigang | The Best Sinigang Cuisine.jpg | Jessartcam | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:The_Best_Sinigang_Cuisine.jpg
 Tablea Tsokolate | Sikwate.jpg | Lyraauce | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Sikwate.jpg
-Turon | Turon na Saging.jpg | Herbertkikoy | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Turon_na_Saging.jpg
